@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Bugema Clean Community Tracker</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+  <h2>Bugema Clean Community Tracker</h2>
+</header>
+
+
+<!-- =========================================
+     ADMIN LOGIN
+========================================= -->
+
+<section id="loginPanel" class="card login-panel">
+
+  <h3>Administrator Login</h3>
+
+  <label>Email</label>
+  <input
+    id="loginEmail"
+    type="email"
+    autocomplete="username"
+    required
+  >
+
+  <label>Password</label>
+  <input
+    id="loginPassword"
+    type="password"
+    autocomplete="current-password"
+    required
+  >
+
+  <button class="btn login-btn" onclick="loginAdmin()">
+    Log in
+  </button>
+
+  <p id="loginMessage" role="alert"></p>
+
+</section>
+
+
+<!-- =========================================
+     ADMIN AREA
+========================================= -->
+
+<div id="adminArea" hidden>
+
+  <!-- NAVIGATION -->
+
+  <nav id="nav">
+
+    <a data-page="dashboard" class="active">
+      Dashboard
+    </a>
+
+    <a data-page="reports">
+      Reports
+    </a>
+
+    <a data-page="locations">
+      Locations
+    </a>
+
+    <a data-page="teams">
+      Teams
+    </a>
+
+    <a data-page="reporters">
+      Reporters
+    </a>
+
+    <a data-page="logs">
+      Collection Logs
+    </a>
+
+  </nav>
+
+
+  <main>
+
+
+    <!-- =====================================
+         DASHBOARD
+    ====================================== -->
+
+    <section id="dashboard" class="page show">
+
+      <h3>Dashboard</h3>
+
+      <div class="stats">
+
+        <div class="stat">
+          <div>Total reports</div>
+          <div class="num" id="sTotal">-</div>
+        </div>
+
+        <div class="stat orange">
+          <div>Open reports</div>
+          <div class="num" id="sOpen">-</div>
+        </div>
+
+        <div class="stat red">
+          <div>Urgent unresolved</div>
+          <div class="num" id="sUrgent">-</div>
+        </div>
+
+        <div class="stat red">
+          <div>Missed collections</div>
+          <div class="num" id="sMissed">-</div>
+        </div>
+
+        <div class="stat orange">
+          <div>Overdue reports</div>
+          <div class="num" id="sOverdue">-</div>
+        </div>
+
+        <div class="stat">
+          <div>Reports resolved</div>
+          <div class="num" id="sResolvedRate">-</div>
+        </div>
+
+      </div>
+
+
+      <!-- DASHBOARD TABLES -->
+
+      <div class="two">
+
+        <div>
+          <h4>Reports by service area</h4>
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Reports</th>
+                <th>Unresolved</th>
+              </tr>
+            </thead>
+
+            <tbody id="areaRows"></tbody>
+
+          </table>
+        </div>
+
+
+        <div>
+          <h4>Reports by status</h4>
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+
+            <tbody id="statusRows"></tbody>
+
+          </table>
+        </div>
+
+
+        <div>
+          <h4>Reports by location</h4>
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Area</th>
+                <th>Reports</th>
+              </tr>
+            </thead>
+
+            <tbody id="locRows"></tbody>
+
+          </table>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================
+         REPORTS
+    ====================================== -->
+
+    <section id="reports" class="page">
+
+      <h3>Manage Community Reports</h3>
+
+
+      <!-- ADD REPORT POPUP -->
+
+      <div class="card modal-card" id="reportCard">
+
+        <div class="modal-header">
+          <h3 id="reportFormTitle">
+            Add a Report
+          </h3>
+
+          <button
+            class="modal-close"
+            onclick="resetReportForm()">
+            ×
+          </button>
+        </div>
+
+
+        <label>Location</label>
+
+        <select id="reportLocation">
+          <option value="">Select location</option>
+        </select>
+
+
+        <label>Reporter</label>
+
+        <select id="reportReporter">
+          <option value="">Select reporter</option>
+        </select>
+
+
+        <label>Issue Type</label>
+
+        <select id="reportIssueType">
+
+          <option value="">Select issue</option>
+
+          <option>Full bin</option>
+          <option>Overflowing waste</option>
+          <option>Missed collection</option>
+          <option>Litter on walkway</option>
+          <option>Blocked drain</option>
+          <option>Illegal dumping</option>
+          <option>Burning of waste</option>
+          <option>Market waste</option>
+          <option>Open sewage</option>
+          <option>Stagnant water</option>
+          <option>Dead animal</option>
+
+        </select>
+
+
+        <label>Urgency</label>
+
+        <select id="reportUrgency">
+
+          <option>High</option>
+          <option selected>Medium</option>
+          <option>Low</option>
+
+        </select>
+
+
+        <label>Description</label>
+
+        <textarea
+          id="reportDescription"
+          placeholder="Describe the problem">
+        </textarea>
+
+
+        <button class="btn" onclick="saveReport()">
+          Save Report
+        </button>
+
+        <button
+          class="btn grey"
+          onclick="resetReportForm()">
+          Cancel
+        </button>
+
+      </div>
+
+
+      <!-- EDIT REPORT POPUP -->
+
+      <div class="card modal-card" id="editCard">
+
+        <div class="modal-header">
+
+          <h3>
+            Edit Report
+            <span id="editId"></span>
+          </h3>
+
+          <button
+            class="modal-close"
+            onclick="closeEdit()">
+            ×
+          </button>
+
+        </div>
+
+
+        <label>Status</label>
+
+        <select id="editStatus">
+
+          <option>open</option>
+          <option>assigned</option>
+          <option>in-progress</option>
+          <option>resolved</option>
+
+        </select>
+
+
+        <label>Urgency</label>
+
+        <select id="editUrgency">
+
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+
+        </select>
+
+
+        <label>Assigned team</label>
+
+        <select id="editTeam"></select>
+
+
+        <button class="btn" onclick="saveEdit()">
+          Save Changes
+        </button>
+
+        <button
+          class="btn grey"
+          onclick="closeEdit()">
+          Cancel
+        </button>
+
+      </div>
+
+
+      <h3>Reports</h3>
+
+
+      <div class="toolbar">
+
+        <div class="filter">
+
+          <span>Area:</span>
+
+          <select
+            id="areaFilter"
+            onchange="loadReports()">
+
+            <option value="">All</option>
+            <option>Campus</option>
+            <option>Village</option>
+
+          </select>
+
+
+          <span>Status:</span>
+
+          <select
+            id="statusFilter"
+            onchange="loadReports()">
+
+            <option value="">All</option>
+            <option>open</option>
+            <option>assigned</option>
+            <option>in-progress</option>
+            <option>resolved</option>
+
+          </select>
+
+          <span>Urgency:</span>
+
+          <select id="urgencyFilter" onchange="loadReports()">
+            <option value="">All</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+
+          <span>Location:</span>
+
+          <select id="reportLocationFilter" onchange="loadReports()">
+            <option value="">All locations</option>
+          </select>
+
+          <label for="reportFromFilter">From:</label>
+          <input id="reportFromFilter" type="date" onchange="loadReports()">
+
+          <label for="reportToFilter">To:</label>
+          <input id="reportToFilter" type="date" onchange="loadReports()">
+
+          <input
+            id="reportSearch"
+            type="search"
+            placeholder="Search reports"
+            aria-label="Search reports"
+            oninput="scheduleReportSearch()">
+
+        </div>
+
+
+        <button
+          class="btn"
+          onclick="openAddReport()">
+
+          + Add Report
+
+        </button>
+
+      </div>
+
+
+      <p id="reportLoadMessage" role="status" aria-live="polite"></p>
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>Report ID</th>
+            <th>Location details</th>
+            <th>Service area</th>
+            <th>Issue</th>
+            <th>Urgency</th>
+            <th>Status</th>
+            <th>Team</th>
+            <th>Team activity</th>
+            <th>Age</th>
+            <th>Actions</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="reportRows"></tbody>
+
+      </table>
+
+    </section>
+
+
+    <!-- =====================================
+         LOCATIONS
+    ====================================== -->
+
+    <section id="locations" class="page">
+
+      <!-- LOCATION POPUP -->
+
+      <div class="card modal-card" id="locCard">
+
+        <div class="modal-header">
+
+          <h3 id="locFormTitle">
+            Add a Location
+          </h3>
+
+          <button
+            class="modal-close"
+            onclick="resetLocationForm()">
+            ×
+          </button>
+
+        </div>
+
+
+        <label>Name</label>
+
+        <input id="locName">
+
+
+        <label>Zone / service area</label>
+
+        <input
+          id="locZone"
+          placeholder="e.g. Village, Trading Centre, Market, Academic, Roadside">
+
+
+        <label>Area</label>
+
+        <select id="locArea">
+
+          <option>Campus</option>
+          <option>Village</option>
+
+        </select>
+
+
+        <label>Bin Count</label>
+
+        <input
+          id="locBins"
+          type="number"
+          min="0">
+
+
+        <button
+          class="btn"
+          onclick="saveLocation()">
+
+          Save Location
+
+        </button>
+
+
+        <button
+          class="btn grey"
+          onclick="resetLocationForm()">
+
+          Cancel
+
+        </button>
+
+      </div>
+
+
+      <h3>Locations</h3>
+
+
+      <div class="toolbar">
+
+        <div class="filter">
+
+          <span>Area:</span>
+
+          <select
+            id="locAreaFilter"
+            onchange="loadLocations()">
+
+            <option value="">All</option>
+            <option>Campus</option>
+            <option>Village</option>
+
+          </select>
+
+        </div>
+
+
+        <button
+          class="btn"
+          onclick="openAddLocation()">
+
+          + Add Location
+
+        </button>
+
+      </div>
+
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>ID</th>
+            <th>Name</th>
+            <th>Zone</th>
+            <th>Area</th>
+            <th>Bins</th>
+            <th>Actions</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="locRowsTable"></tbody>
+
+      </table>
+
+    </section>
+
+
+    <!-- =====================================
+         TEAMS
+    ====================================== -->
+
+    <section id="teams" class="page">
+
+      <!-- TEAM POPUP -->
+
+      <div class="card modal-card" id="teamCard">
+
+        <div class="modal-header">
+
+          <h3 id="teamFormTitle">
+            Add a Team
+          </h3>
+
+          <button
+            class="modal-close"
+            onclick="resetTeamForm()">
+            ×
+          </button>
+
+        </div>
+
+
+        <label>Name</label>
+
+        <input id="teamName">
+
+
+        <label>Organization</label>
+
+        <select id="teamOrg">
+
+          <option>University</option>
+          <option>Sub-county</option>
+          <option>Private collector</option>
+          <option>Health office</option>
+
+        </select>
+
+
+        <label>Supervisor</label>
+
+        <input id="teamSupervisor">
+
+
+        <label>Phone</label>
+
+        <input
+          id="teamPhone"
+          placeholder="+256...">
+
+
+        <label>Zones</label>
+
+        <input
+          id="teamZones"
+          placeholder="Market, Roadside">
+
+
+        <label>Members</label>
+
+        <input
+          id="teamMembers"
+          type="number"
+          min="0">
+
+
+        <label>Shift</label>
+
+        <input
+          id="teamShift"
+          placeholder="7AM-3PM">
+
+
+        <button
+          class="btn"
+          onclick="saveTeam()">
+
+          Save Team
+
+        </button>
+
+
+        <button
+          class="btn grey"
+          onclick="resetTeamForm()">
+
+          Cancel
+
+        </button>
+
+      </div>
+
+
+      <h3>Teams</h3>
+
+
+      <div class="toolbar">
+
+        <div class="filter">
+
+          <span>Organization:</span>
+
+          <select
+            id="teamOrgFilter"
+            onchange="loadTeams()">
+
+            <option value="">All</option>
+            <option>University</option>
+            <option>Sub-county</option>
+            <option>Private collector</option>
+            <option>Health office</option>
+
+          </select>
+
+        </div>
+
+
+        <button
+          class="btn"
+          onclick="openAddTeam()">
+
+          + Add Team
+
+        </button>
+
+      </div>
+
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>ID</th>
+            <th>Name</th>
+            <th>Organization</th>
+            <th>Supervisor</th>
+            <th>Phone</th>
+            <th>Zones</th>
+            <th>Members</th>
+            <th>Shift</th>
+            <th>Actions</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="teamRowsTable"></tbody>
+
+      </table>
+
+    </section>
+
+
+    <!-- =====================================
+         REPORTERS
+    ====================================== -->
+
+    <section id="reporters" class="page">
+
+      <!-- REPORTER POPUP -->
+
+      <div class="card modal-card" id="repCard">
+
+        <div class="modal-header">
+
+          <h3 id="repFormTitle">
+            Add a Reporter
+          </h3>
+
+          <button
+            class="modal-close"
+            onclick="resetReporterForm()">
+            ×
+          </button>
+
+        </div>
+
+
+        <label>Name</label>
+
+        <input id="repName">
+
+
+        <label>Role</label>
+
+        <input
+          id="repRole"
+          placeholder="Student, Trader, LC leader...">
+
+
+        <label>Affiliation</label>
+
+        <select id="repAff">
+
+          <option>Campus</option>
+          <option>Community</option>
+
+        </select>
+
+
+        <label>Phone</label>
+
+        <input
+          id="repPhone"
+          placeholder="+256...">
+
+
+        <button
+          class="btn"
+          onclick="saveReporter()">
+
+          Save Reporter
+
+        </button>
+
+
+        <button
+          class="btn grey"
+          onclick="resetReporterForm()">
+
+          Cancel
+
+        </button>
+
+      </div>
+
+
+      <h3>Reporters</h3>
+
+
+      <div class="toolbar">
+
+        <div class="filter">
+
+          <span>Affiliation:</span>
+
+          <select
+            id="repAffFilter"
+            onchange="loadReporters()">
+
+            <option value="">All</option>
+            <option>Campus</option>
+            <option>Community</option>
+
+          </select>
+
+        </div>
+
+
+        <button
+          class="btn"
+          onclick="openAddReporter()">
+
+          + Add Reporter
+
+        </button>
+
+      </div>
+
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>ID</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Affiliation</th>
+            <th>Phone</th>
+            <th>Actions</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="repRowsTable"></tbody>
+
+      </table>
+
+    </section>
+
+
+    <!-- =====================================
+         COLLECTION LOGS
+    ====================================== -->
+
+    <section id="logs" class="page">
+
+      <!-- COLLECTION LOG POPUP -->
+
+      <div class="card modal-card" id="logCard">
+
+        <div class="modal-header">
+
+          <h3 id="logFormTitle">
+            Add a Collection Log
+          </h3>
+
+          <button
+            class="modal-close"
+            onclick="resetLogForm()">
+            ×
+          </button>
+
+        </div>
+
+
+        <label>Location</label>
+
+        <select id="logLocation"></select>
+
+
+        <label>Team</label>
+
+        <select id="logTeam"></select>
+
+
+        <label>Scheduled Date</label>
+
+        <input
+          id="logDate"
+          type="date">
+
+
+        <label>Status</label>
+
+        <select id="logStatus">
+
+          <option>collected</option>
+          <option>missed</option>
+
+        </select>
+
+
+        <label>Waste Type</label>
+
+        <select id="logWaste">
+
+          <option>Mixed</option>
+          <option>Organic</option>
+          <option>Plastic</option>
+          <option>Hazardous</option>
+          <option>Medical</option>
+
+        </select>
+
+
+        <label>Note</label>
+
+        <input
+          id="logNote"
+          placeholder="e.g. Truck breakdown">
+
+
+        <button
+          class="btn"
+          onclick="saveLog()">
+
+          Save Log
+
+        </button>
+
+
+        <button
+          class="btn grey"
+          onclick="resetLogForm()">
+
+          Cancel
+
+        </button>
+
+      </div>
+
+
+      <h3>Collection Logs</h3>
+
+
+      <div class="toolbar">
+
+        <div class="filter">
+
+          <span>Status:</span>
+
+          <select
+            id="logStatusFilter"
+            onchange="loadLogs()">
+
+            <option value="">All</option>
+            <option>collected</option>
+            <option>missed</option>
+
+          </select>
+
+
+          <span>Area:</span>
+
+          <select
+            id="logAreaFilter"
+            onchange="loadLogs()">
+
+            <option value="">All</option>
+            <option>Campus</option>
+            <option>Village</option>
+
+          </select>
+
+        </div>
+
+
+        <button
+          class="btn"
+          onclick="openAddLog()">
+
+          + Add Collection Log
+
+        </button>
+
+      </div>
+
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>ID</th>
+            <th>Location</th>
+            <th>Area</th>
+            <th>Team</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Completed at</th>
+            <th>Waste</th>
+            <th>Note</th>
+            <th>Actions</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="logRowsTable"></tbody>
+
+      </table>
+
+    </section>
+
+  </main>
+
+
+  <!-- =========================================
+       LOGOUT
+  ========================================== -->
+
+  <div class="logout-area">
+
+    <button
+      class="btn grey logout-btn"
+      onclick="logoutAdmin()">
+
+      Log out
+
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================
+     JAVASCRIPT
+========================================= -->
+
+<script src="locations.js"></script>
+<script src="teams.js"></script>
+<script src="reporters.js"></script>
+<script src="logs.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

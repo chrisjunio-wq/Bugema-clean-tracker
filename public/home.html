@@ -1,0 +1,710 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="theme-color" content="#126b43">
+    <meta name="description" content="Bugema Clean Community Tracker - Report waste problems and help keep our community clean.">
+
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icon.svg">
+
+    <title>Bugema Clean Community | Home</title>
+
+    <style>
+        :root {
+            --green: #126b43;
+            --green-dark: #0b4930;
+            --green-bright: #198b53;
+            --green-light: #eaf6ef;
+            --text: #1d3026;
+            --muted: #718078;
+            --border: #e3ebe5;
+            --background: #f5f8f6;
+            --white: #ffffff;
+            --shadow: 0 12px 35px rgba(25, 65, 43, 0.07);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(115deg, #0b4930, #16834e);
+            color: white;
+            padding: 40px 7%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 68px;
+            height: 68px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: rgba(255,255,255,0.16);
+            font-size: 36px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .brand p {
+            margin: 2px 0 0;
+            color: #d9f0e2;
+            font-size: 12px;
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 650;
+            padding: 11px 15px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background: rgba(255,255,255,0.17);
+        }
+
+        /* HERO */
+        .hero {
+            background: linear-gradient(135deg, #e9f5ed, #f5faf6);
+            padding: 72px 20px 68px;
+            text-align: center;
+            border-bottom: 1px solid #e3eee6;
+            border-radius: 18px 18px 0 0;
+            margin-top: -18px;
+        }
+
+        .hero-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--green);
+            background: #d9eee1;
+            border-radius: 30px;
+            padding: 7px 15px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hero h2 {
+            max-width: 800px;
+            margin: 19px auto 13px;
+            color: #164c31;
+            font-size: clamp(32px, 5vw, 49px);
+            line-height: 1.17;
+            letter-spacing: -1.7px;
+            font-weight: 800;
+        }
+
+        .hero h2 span {
+            color: #198b53;
+        }
+
+        .hero p {
+            max-width: 650px;
+            margin: auto;
+            color: #65776c;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 13px;
+            flex-wrap: wrap;
+            margin-top: 28px;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 13px 21px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 750;
+            transition: 0.2s;
+        }
+
+        .button-primary {
+            background: linear-gradient(110deg, #126b43, #198b53);
+            color: white;
+            box-shadow: 0 6px 15px rgba(18,107,67,0.17);
+        }
+
+        .button-primary:hover {
+            background: #0b4930;
+            transform: translateY(-2px);
+        }
+
+        .button-secondary {
+            color: var(--green);
+            background: white;
+            border: 1px solid #cfe2d5;
+        }
+
+        .button-secondary:hover {
+            background: var(--green-light);
+            transform: translateY(-2px);
+        }
+
+        /* MAIN CONTENT */
+        .container {
+            width: min(100% - 36px, 1100px);
+            margin: 48px auto;
+        }
+
+        .section-heading {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .section-heading span {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .section-heading h2 {
+            margin: 7px 0;
+            color: #174d32;
+            font-size: clamp(23px, 3vw, 30px);
+            letter-spacing: -0.8px;
+            font-weight: 800;
+        }
+
+        .section-heading p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* FEATURE CARDS */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: 0.25s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 35px rgba(25, 65, 43, 0.11);
+        }
+
+        .feature-icon {
+            width: 47px;
+            height: 47px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: var(--green-light);
+            font-size: 23px;
+            margin-bottom: 17px;
+        }
+
+        .feature-card h3 {
+            margin: 0 0 8px;
+            color: #174d32;
+            font-size: 17px;
+            font-weight: 750;
+            letter-spacing: -0.3px;
+        }
+
+        .feature-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        /* HOW IT WORKS */
+        .how-section {
+            background: white;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 48px 18px;
+        }
+
+        .steps {
+            width: min(100%, 1050px);
+            margin: 30px auto 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 17px;
+        }
+
+        .step-card {
+            text-align: center;
+            padding: 20px 15px;
+        }
+
+        .step-number {
+            width: 43px;
+            height: 43px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 13px;
+            border-radius: 50%;
+            background: var(--green-light);
+            color: var(--green);
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .step-card h3 {
+            margin: 0 0 7px;
+            color: #174d32;
+            font-size: 15px;
+            font-weight: 750;
+        }
+
+        .step-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .about-contact {
+            padding: 44px 18px;
+            background: #eaf4ed;
+            border-top: 1px solid #dce9df;
+            border-bottom: 1px solid #dce9df;
+        }
+
+        .about-contact-inner {
+            width: min(100%, 1050px);
+            margin: auto;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 48px;
+        }
+
+        .about-contact h2,
+        .about-contact h3 {
+            margin: 0 0 10px;
+            color: #174d32;
+        }
+
+        .about-contact h2 {
+            font-size: 24px;
+        }
+
+        .about-contact p {
+            margin: 0;
+            color: #526459;
+            font-size: 14px;
+        }
+
+        /* CALL TO ACTION */
+        .cta {
+            width: min(100% - 36px, 1050px);
+            margin: 48px auto;
+            padding: 40px 25px;
+            text-align: center;
+            border-radius: 18px;
+            color: white;
+            background: linear-gradient(115deg, #0b4930, #16834e);
+            box-shadow: 0 12px 30px rgba(18,107,67,0.13);
+        }
+
+        .cta h2 {
+            margin: 0 0 10px;
+            font-size: clamp(23px, 3vw, 30px);
+            font-weight: 800;
+            letter-spacing: -0.7px;
+        }
+
+        .cta p {
+            max-width: 570px;
+            margin: 0 auto 22px;
+            color: #d9f0e2;
+            font-size: 14px;
+        }
+
+        .cta .button {
+            background: white;
+            color: var(--green);
+        }
+
+        .cta .button:hover {
+            background: #eaf6ef;
+            transform: translateY(-2px);
+        }
+
+        /* FOOTER */
+        footer {
+            background: #103c29;
+            color: white;
+            text-align: center;
+            padding: 27px 15px;
+        }
+
+        footer strong {
+            font-size: 14px;
+        }
+
+        footer p {
+            margin: 5px;
+            color: #d0e4d7;
+            font-size: 12px;
+        }
+
+        /* MOBILE */
+        @media (max-width: 760px) {
+            header {
+                padding: 30px 5%;
+            }
+
+            .brand-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 32px;
+            }
+
+            .brand h1 {
+                font-size: 28px;
+            }
+
+            nav {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .features {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .steps {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .about-contact-inner {
+                grid-template-columns: 1fr;
+                gap: 28px;
+            }
+
+            .hero {
+                padding: 55px 18px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            header {
+                justify-content: center;
+                text-align: center;
+                padding: 24px 5%;
+            }
+
+            .brand {
+                justify-content: center;
+            }
+
+            .brand h1 {
+                font-size: 26px;
+            }
+
+            .brand-icon {
+                width: 56px;
+                height: 56px;
+                font-size: 30px;
+            }
+
+            nav {
+                gap: 4px;
+            }
+
+            nav a {
+                font-size: 13px;
+                padding: 9px 10px;
+            }
+
+            .hero {
+                padding: 42px 17px;
+            }
+
+            .hero h2 {
+                font-size: 31px;
+            }
+
+            .hero p {
+                font-size: 13px;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+                align-items: stretch;
+                max-width: 280px;
+                margin: 24px auto 0;
+            }
+
+            .features,
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                margin: 35px auto;
+            }
+
+            .feature-card {
+                padding: 22px;
+            }
+
+            .cta {
+                padding: 32px 19px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">🌿</div>
+            <div>
+                <h1>Bugema Clean Community</h1>
+                <p>Community Waste Management System</p>
+            </div>
+        </div>
+
+        <nav>
+            <a href="/home.html" class="active">Home</a>
+            <a href="/report.html">Report a Problem</a>
+            <a href="/track.html">Track Report</a>
+        </nav>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="hero-label">🌱 A Cleaner Community Starts With Us</div>
+
+        <h2>
+            Together, Let's Build a
+            <span>Cleaner Bugema</span>
+        </h2>
+
+        <p>
+            Help us create a cleaner and healthier environment.
+            Report waste problems, follow their progress, and
+            become part of the positive change in our community.
+        </p>
+
+        <div class="hero-actions">
+            <a href="/report.html" class="button button-primary">
+                Report a Waste Problem →
+            </a>
+
+            <a href="/track.html" class="button button-secondary">
+                Track Your Report
+            </a>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <main class="container">
+
+        <div class="section-heading">
+            <span>What You Can Do</span>
+            <h2>Making Community Reporting Easier</h2>
+            <p>Simple tools that help everyone participate in proper waste management.</p>
+        </div>
+
+        <section class="features">
+
+            <article class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>Report Waste Problems</h3>
+                <p>
+                    Report overflowing bins, illegal dumping,
+                    blocked drains, missed collections and other
+                    waste management concerns.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">🔎</div>
+                <h3>Track Your Reports</h3>
+                <p>
+                    Use your private tracking link to check the
+                    progress and status of a report you have submitted.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <h3>Support a Cleaner Community</h3>
+                <p>
+                    Help the community identify waste problems
+                    and encourage responsible waste management.
+                </p>
+            </article>
+
+        </section>
+
+    </main>
+
+    <!-- HOW IT WORKS -->
+    <section class="how-section">
+
+        <div class="section-heading">
+            <span>Simple Process</span>
+            <h2>How It Works</h2>
+            <p>Four simple steps to help improve our environment.</p>
+        </div>
+
+        <div class="steps">
+
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Identify a Problem</h3>
+                <p>Notice a waste problem in your area.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Submit a Report</h3>
+                <p>Provide the location and problem details.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Receive a Tracking Link</h3>
+                <p>Keep the private link provided by the system.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h3>Follow Progress</h3>
+                <p>Use your link to check the report status.</p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="about-contact" aria-label="About the service and contact guidance">
+        <div class="about-contact-inner">
+            <div>
+                <h2>About the service area</h2>
+                <p>
+                    Bugema Clean Community Tracker supports waste reports at Bugema University
+                    and nearby villages, trading centres, markets and roadside service areas.
+                    Include a clear landmark so administrators can direct each report to the
+                    appropriate campus or community cleaning team.
+                </p>
+            </div>
+            <div>
+                <h3>Contact and urgent concerns</h3>
+                <p>
+                    This tracker is for community waste-management reports. For immediate danger
+                    or urgent health and safety concerns, contact the relevant local authority
+                    or emergency service directly.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CALL TO ACTION -->
+    <section class="cta">
+        <h2>Be Part of the Change</h2>
+        <p>
+            A cleaner environment begins with community participation.
+            Your report can help make a difference.
+        </p>
+
+        <a href="/report.html" class="button">
+            Submit a Waste Report →
+        </a>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <p><strong>🌿 Bugema Clean Community Tracker</strong></p>
+        <p>Working together for a cleaner and healthier community.</p>
+        <p>© 2026 Bugema Clean Community Tracker</p>
+    </footer>
+
+    <!-- SERVICE WORKER -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(() => console.log('Bugema Clean service worker registered'))
+                    .catch(error => console.error(
+                        'Service worker registration failed:', error
+                    ));
+            });
+        }
+    </script>
+
+</body>
+</html>
