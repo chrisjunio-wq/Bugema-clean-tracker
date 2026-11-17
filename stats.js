@@ -1,78 +1,83 @@
 
-const { requireAuth, requireAdmin } = require('./auth');
+'use strict';
 
-module.exports = function (app, db) {
+const {
+  requireAuth,
+  requireAdmin
+} = require('./auth');
+
+const {
+  REPORT_STATUSES,
+  CLOSED_REPORT_STATUSES
+} = require('./helpers');
+
+function registerStats(app, db) {
+  const authenticate = requireAuth(db);
+  const reports = db.collection('reports');
+
   const adminOnly = [
-    requireAuth(db),
+    authenticate,
     requireAdmin
   ];
 
-  const reports = db.collection('reports');
-  const logs = db.collection('collectionLogs');
-
-  // SUMMARY STATISTICS
   app.get('/api/stats/summary', ...adminOnly, async (req, res) => {
     try {
+      const now = new Date();
+
       const [
         totalReports,
         openReports,
-        urgentUnresolved,
-        missedCollections,
-        resolvedReports,
-        overdueReports
+        urgentReports,
+        overdueReports,
+        resolvedReports
       ] = await Promise.all([
         reports.countDocuments(),
 
         reports.countDocuments({
-          status: 'open'
+          status: { $in: ['open', 'under-review'] }
         }),
 
         reports.countDocuments({
-          urgency: 'High',
-          status: { $ne: 'resolved' }
+          urgency: { $in: ['high', 'critical'] },
+          status: { $nin: CLOSED_REPORT_STATUSES }
         }),
 
-        logs.countDocuments({
-          status: 'missed'
+        reports.countDocuments({
+          status: { $nin: CLOSED_REPORT_STATUSES },
+          dueDate: { $lt: now }
         }),
 
         reports.countDocuments({
           status: 'resolved'
-        }),
-
-        reports.countDocuments({
-          status: { $ne: 'resolved' },
-          reportedAt: {
-            $lt: new Date(Date.now() - 72 * 60 * 60 * 1000)
-          }
         })
       ]);
 
-      return res.json({
-        totalReports,
-        openReports,
-        urgentUnresolved,
-        missedCollections,
-        resolvedReports,
-        overdueReports,
-        resolvedRate: totalReports
-          ? Math.round((resolvedReports / totalReports) * 100)
-          : 0
-      });
+      const resolvedRate = totalReports > 0
+        ? Number(((resolvedReports / totalReports) * 100).toFixed(1))
+        : 0;
 
+      return res.json({
+        summary: {
+          totalReports,
+          openReports,
+          urgentReports,
+          overdueReports,
+          resolvedReports,
+          resolvedRate
+        }
+      });
     } catch (error) {
-      console.error('Summary statistics error:', error);
+      console.error('Summary statistics error:', error.message);
 
       return res.status(500).json({
-        error: 'Could not load summary statistics'
+        error: 'Unable to load summary statistics.'
       });
     }
   });
 
-  // REPORTS BY STATUS
   app.get('/api/stats/by-status', ...adminOnly, async (req, res) => {
     try {
-      const result = await reports.aggregate([
+      const results = await reports.aggregate([
         {
           $group: {
             _id: '$status',
@@ -80,159 +85,108 @@ module.exports = function (app, db) {
           }
         },
         {
-          $sort: { _id: 1 }
+          $sort: { count: -1 }
         }
       ]).toArray();
 
-      return res.json(result);
+      const counts = new Map(
+        results.map(item => [item._id, item.count])
+      );
 
+      const data = REPORT_STATUSES.map(status => ({
+        status,
+        count: counts.get(status) || 0
+      }));
+
+      return res.json({ data });
     } catch (error) {
-      console.error('Status statistics error:', error);
+      console.error('Status statistics error:', error.message);
 
       return res.status(500).json({
-        error: 'Could not load status statistics'
+        error: 'Unable to load status statistics.'
       });
     }
   });
-// REPORTS BY LOCATION
-app.get('/api/stats/by-location', ...adminOnly, async (req, res) => {
-  try {
-    const result = await reports.aggregate([
-      {
-        $lookup: {
-          from: 'locations',
-          localField: 'locationId',
-          foreignField: '_id',
-          as: 'location'
-        }
-      },
-      {
-        $unwind: {
-          path: '$location',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $group: {
-          _id: {
-            name: {
-              $ifNull: ['$locationDetails', '$location.name']
-            },
-            area: {
-              $ifNull: [
-                '$location.area',
-                {
-                  $cond: [
-                    { $eq: ['$locationType', 'University / Campus'] },
-                    'Campus',
-                    'Village'
-                  ]
-                }
-              ]
-            }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          locationName: {
-            $ifNull: ['$_id.name', 'Unknown location']
-          },
-          area: {
-            $ifNull: ['$_id.area', 'Unspecified']
-          },
-          count: 1
-        }
-      },
-      {
-        $sort: { count: -1 }
-      }
-    ]).toArray();
 
-    return res.json(result);
-
-  } catch (error) {
-    console.error('Location statistics error:', error);
-
-    return res.status(500).json({
-      error: 'Could not load location statistics'
-    });
-  }
-});
-  // REPORTS BY SERVICE AREA
-  app.get('/api/stats/by-area', ...adminOnly, async (req, res) => {
+  app.get('/api/stats/by-location', ...adminOnly, async (req, res) => {
     try {
-      const result = await reports.aggregate([
-        {
-          $lookup: {
-            from: 'locations',
-            localField: 'locationId',
-            foreignField: '_id',
-            as: 'location'
-          }
-        },
-        {
-          $unwind: {
-            path: '$location',
-            preserveNullAndEmptyArrays: true
-          }
-        },
+      const results = await reports.aggregate([
         {
           $group: {
             _id: {
-                            $switch: {
-                branches: [
-                  {
-                    case: { $eq: ['$locationType', 'University / Campus'] },
-                    then: 'Campus'
-                  },
-                  {
-                    case: { $in: ['$locationType', ['Resident', 'Market', 'Trading Centre', 'Roadside / Service Area']] },
-                    then: 'Village'
-                  }
-                ],
-                default: '$location.area'
-              }
+              $ifNull: [
+                '$locationName',
+                {
+                  $ifNull: [
+                    '$locationDetails',
+                    'Unspecified location'
+                  ]
+                }
+              ]
             },
-                        count: { $sum: 1 },
-            unresolved: {
-              $sum: {
-                $cond: [{ $ne: ['$status', 'resolved'] }, 1, 0]
-              }
-            }
+            count: { $sum: 1 }
           }
+        },
+        {
+          $sort: { count: -1 }
+        },
+        {
+          $limit: 20
         },
         {
           $project: {
             _id: 0,
-            area: {
-              $ifNull: ['$_id', 'Unspecified']
-            },
-                        count: 1,
-            unresolved: 1
+            location: '$_id',
+            count: 1
           }
-        },
-        {
-          $sort: { area: 1 }
         }
       ]).toArray();
 
-      // Keep the response compatible with the dashboard's
-      // existing expectation of _id and count.
-      return res.json(result.map(item => ({
-        _id: item.area,
-        count: item.count,
-        unresolved: item.unresolved
-      })));
-
+      return res.json({ data: results });
     } catch (error) {
-      console.error('Service area statistics error:', error);
+      console.error('Location statistics error:', error.message);
 
       return res.status(500).json({
-        error: 'Could not load service area statistics'
+        error: 'Unable to load location statistics.'
       });
     }
   });
-};
+
+  app.get('/api/stats/by-area', ...adminOnly, async (req, res) => {
+    try {
+      const results = await reports.aggregate([
+        {
+          $group: {
+            _id: {
+              $ifNull: ['$locationArea', 'Unspecified area']
+            },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { count: -1 }
+        },
+        {
+          $limit: 20
+        },
+        {
+          $project: {
+            _id: 0,
+            area: '$_id',
+            count: 1
+          }
+        }
+      ]).toArray();
+
+      return res.json({ data: results });
+    } catch (error) {
+      console.error('Area statistics error:', error.message);
+
+      return res.status(500).json({
+        error: 'Unable to load area statistics.'
+      });
+    }
+  });
+}
+
+module.exports = registerStats;

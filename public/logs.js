@@ -1,680 +1,463 @@
-// =========================================
-// COLLECTION LOGS
-// =========================================
 
-let logEditing = null;
-
-
-// =========================================
-// OPEN ADD LOG
-// =========================================
-
-async function openAddLog() {
-
-  logEditing = null;
-
-
-  document
-    .getElementById(
-      'logFormTitle'
-    )
-    .textContent =
-    'Add a Collection Log';
-
-
-  document
-    .getElementById(
-      'logDate'
-    )
-    .value = '';
-
-
-  document
-    .getElementById(
-      'logStatus'
-    )
-    .value =
-    'collected';
-
-
-  document
-    .getElementById(
-      'logWaste'
-    )
-    .value =
-    'Mixed';
-
-
-  document
-    .getElementById(
-      'logNote'
-    )
-    .value = '';
-
-
-  await loadLogDropdowns();
-
-  openModal(
-    'logCard'
-  );
-
-}
-
-
-// =========================================
-// LOAD COLLECTION LOGS
-// =========================================
-
-async function loadLogs() {
-
-  try {
-
-    const status =
-      document
-        .getElementById(
-          'logStatusFilter'
-        )?.value || '';
-
-
-    const area =
-      document
-        .getElementById(
-          'logAreaFilter'
-        )?.value || '';
-
-
-    const params =
-      new URLSearchParams();
-
-
-    if (status) {
-
-      params.set(
-        'status',
-        status
-      );
-
-    }
-
-
-    if (area) {
-
-      params.set(
-        'area',
-        area
-      );
-
-    }
-
-
-    const data =
-      await apiRequest(
-        '/api/collectionLogs?' +
-        params.toString()
-      );
-
-
-    document
-      .getElementById(
-        'logRowsTable'
-      )
-      .innerHTML =
-
-      data
-        .map(log => `
-
-          <tr
-            ${log.status === 'missed'
-              ? 'style="background:#fdecee"'
-              : ''}>
-
-            <td>
-              ${safeText(
-                log._id
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                log.locationName ||
-                log.locationId
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                log.area ||
-                ''
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                log.teamName ||
-                log.teamId
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                log.scheduledFor
-                  ? String(
-                      log.scheduledFor
-                    ).substring(
-                      0,
-                      10
-                    )
-                  : ''
-              )}
-            </td>
-
-            <td>
-
-              ${
-                log.status === 'missed'
-
-                  ? '<b style="color:#dc3545">missed</b>'
-
-                  : 'collected'
-
-              }
-
-            </td>
-
-            <td>
-              ${safeText(
-                log.completedAt
-                  ? new Date(log.completedAt).toLocaleString()
-                  : '-'
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                log.wasteType ||
-                ''
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                log.note ||
-                ''
-              )}
-            </td>
-
-            <td>
-
-              <button
-                class="small edit"
-                onclick="editLog('${safeText(
-                  log._id
-                )}')">
-
-                Edit
-
-              </button>
-
-
-              <button
-                class="small del"
-                onclick="deleteLog('${safeText(
-                  log._id
-                )}')">
-
-                Delete
-
-              </button>
-
-            </td>
-
-          </tr>
-
-        `)
-        .join('');
-
-  } catch (error) {
-
-    console.error(
-      'Loading collection logs failed:',
-      error
-    );
-
+'use strict';
+
+/* =========================================================
+   BUGEMA CLEAN COMMUNITY TRACKER
+   Waste collection log management
+   ========================================================= */
+
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  let logs = [];
+  let locations = [];
+  let teams = [];
+  let editingLogId = null;
+
+  function escapeHtml(value) {
+    return typeof window.escapeHtml === 'function'
+      ? window.escapeHtml(value)
+      : String(value ?? '').replace(/[&<>"']/g, (character) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        })[character]);
   }
 
-}
+  async function request(endpoint, options = {}) {
+    if (typeof window.apiRequest !== 'function') {
+      throw new Error('The main application API client is unavailable.');
+    }
 
+    return window.apiRequest(endpoint, options);
+  }
 
-// =========================================
-// LOAD LOG DROPDOWNS
-// =========================================
+  function recordId(record) {
+    return record?._id ?? record?.id ?? '';
+  }
 
-async function loadLogDropdowns() {
+  function setMessage(message, isError = false) {
+    const element = $('logMessage') || $('logsMessage');
 
-  try {
+    if (!element) return;
 
-    const locations =
-      await apiRequest(
-        '/api/locations'
-      );
+    element.textContent = message;
+    element.style.color = isError ? '#b42318' : '#267344';
+  }
 
+  function formatDate(value) {
+    if (!value) return '—';
 
-    const teams =
-      await apiRequest(
-        '/api/teams'
-      );
+    const date = new Date(value);
 
+    if (Number.isNaN(date.getTime())) return '—';
 
-    const locationSelect =
-      document.getElementById(
-        'logLocation'
-      );
+    return date.toLocaleDateString('en-UG', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
 
+  function dateInputValue(value) {
+    if (!value) return '';
 
-    const teamSelect =
-      document.getElementById(
-        'logTeam'
-      );
+    const date = new Date(value);
 
+    if (Number.isNaN(date.getTime())) return '';
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function rowsContainer() {
+    const table = $('logRowsTable');
+
+    return table
+      ? table.querySelector('tbody') || table
+      : null;
+  }
+
+  function locationName(log) {
+    return log.location?.name ||
+      log.locationName ||
+      locations.find((item) =>
+        String(recordId(item)) === String(log.locationId?._id || log.locationId)
+      )?.name ||
+      '—';
+  }
+
+  function teamName(log) {
+    return log.team?.name ||
+      log.assignedTeam?.name ||
+      log.teamName ||
+      teams.find((item) =>
+        String(recordId(item)) === String(log.teamId?._id || log.teamId)
+      )?.name ||
+      '—';
+  }
+
+  function renderLogs() {
+    const body = rowsContainer();
+
+    if (!body) return;
+
+    if (!logs.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="8">No collection records found.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    body.innerHTML = logs.map((log) => {
+      const id = recordId(log);
+
+      const status = String(log.status || 'scheduled').toLowerCase();
+
+      return `
+        <tr>
+          <td>${escapeHtml(locationName(log))}</td>
+          <td>${escapeHtml(teamName(log))}</td>
+          <td>${escapeHtml(formatDate(log.scheduledFor || log.collectionDate || log.createdAt))}</td>
+          <td>
+            <span class="status-badge status-${escapeHtml(status)}">
+              ${escapeHtml(status)}
+            </span>
+          </td>
+          <td>${escapeHtml(log.wasteType || '—')}</td>
+          <td>${escapeHtml(log.note || log.notes || '—')}</td>
+          <td>${escapeHtml(formatDate(log.completedAt))}</td>
+          <td>
+            <button type="button" onclick="editLog('${escapeHtml(id)}')">
+              Edit
+            </button>
+            <button type="button" onclick="deleteLog('${escapeHtml(id)}')">
+              Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateDropdowns() {
+    const locationSelect = $('logLocation');
 
     if (locationSelect) {
+      const previous = locationSelect.value;
+      const placeholder = locationSelect.options[0]?.textContent || 'Select location';
 
-      locationSelect.innerHTML =
-        '<option value="">Select location</option>' +
+      locationSelect.innerHTML = '';
+      locationSelect.add(new Option(placeholder, ''));
 
-        locations
-          .map(location => `
+      locations.forEach((location) => {
+        locationSelect.add(new Option(
+          location.name || 'Unnamed location',
+          recordId(location)
+        ));
+      });
 
-            <option value="${safeText(
-              location._id
-            )}">
-
-              ${safeText(
-                location.name
-              )}
-
-              (${safeText(
-                location.area
-              )})
-
-            </option>
-
-          `)
-          .join('');
-
+      if (locations.some((item) => String(recordId(item)) === previous)) {
+        locationSelect.value = previous;
+      }
     }
 
+    const teamSelect = $('logTeam');
 
     if (teamSelect) {
+      const previous = teamSelect.value;
+      const placeholder = teamSelect.options[0]?.textContent || 'Select team';
 
-      teamSelect.innerHTML =
-        '<option value="">Select team</option>' +
+      teamSelect.innerHTML = '';
+      teamSelect.add(new Option(placeholder, ''));
 
-        teams
-          .map(team => `
+      teams.forEach((team) => {
+        teamSelect.add(new Option(
+          team.name || 'Unnamed team',
+          recordId(team)
+        ));
+      });
 
-            <option value="${safeText(
-              team._id
-            )}">
+      if (teams.some((item) => String(recordId(item)) === previous)) {
+        teamSelect.value = previous;
+      }
+    }
+  }
 
-              ${safeText(
-                team.name
-              )}
+  async function loadReferenceData() {
+    const [locationResult, teamResult] = await Promise.all([
+      request('/locations'),
+      request('/teams')
+    ]);
 
-            </option>
+    locations = Array.isArray(locationResult)
+      ? locationResult
+      : locationResult.locations || locationResult.data || [];
 
-          `)
-          .join('');
+    teams = Array.isArray(teamResult)
+      ? teamResult
+      : teamResult.teams || teamResult.data || [];
 
+    updateDropdowns();
+  }
+
+  async function loadLogs() {
+    try {
+      const [logResult] = await Promise.all([
+        request('/logs'),
+        loadReferenceData()
+      ]);
+
+      logs = Array.isArray(logResult)
+        ? logResult
+        : logResult.logs || logResult.data || [];
+
+      renderLogs();
+
+      setMessage(`${logs.length} collection record(s) loaded.`);
+
+      return logs;
+    } catch (error) {
+      setMessage(error.message, true);
+      console.error('Collection log loading failed:', error);
+      throw error;
+    }
+  }
+
+  function resetLogForm() {
+    editingLogId = null;
+
+    [
+      'logLocation',
+      'logTeam',
+      'logDate',
+      'logStatus',
+      'logWaste',
+      'logNote'
+    ].forEach((id) => {
+      if ($(id)) $(id).value = '';
+    });
+
+    if ($('logFormTitle')) {
+      $('logFormTitle').textContent = 'Add Collection Record';
     }
 
-  } catch (error) {
-
-    console.error(
-      'Loading collection-log dropdowns failed:',
-      error
-    );
-
+    setMessage('');
   }
 
-}
+  function editLog(id) {
+    const log = logs.find(
+      (item) => String(recordId(item)) === String(id)
+    );
 
+    if (!log) {
+      setMessage('The selected collection record could not be found.', true);
+      return;
+    }
 
-// =========================================
-// EDIT LOG
-// =========================================
+    editingLogId = id;
 
-async function editLog(id) {
+    if ($('logLocation')) {
+      $('logLocation').value =
+        log.locationId?._id ||
+        log.locationId ||
+        log.location?._id ||
+        '';
+    }
 
-  try {
+    if ($('logTeam')) {
+      $('logTeam').value =
+        log.teamId?._id ||
+        log.teamId ||
+        log.team?._id ||
+        log.assignedTeam?._id ||
+        '';
+    }
 
-    await loadLogDropdowns();
-
-
-    const log =
-      await apiRequest(
-        '/api/collectionLogs/' +
-        encodeURIComponent(id)
+    if ($('logDate')) {
+      $('logDate').value = dateInputValue(
+        log.scheduledFor || log.collectionDate || log.createdAt
       );
+    }
 
+    if ($('logStatus')) {
+      $('logStatus').value = log.status || 'scheduled';
+    }
 
-    logEditing = id;
+    if ($('logWaste')) {
+      $('logWaste').value = log.wasteType || '';
+    }
 
+    if ($('logNote')) {
+      $('logNote').value = log.note || log.notes || '';
+    }
 
-    document
-      .getElementById(
-        'logFormTitle'
-      )
-      .textContent =
-      'Edit Collection Log ' +
-      id;
+    if ($('logFormTitle')) {
+      $('logFormTitle').textContent = 'Edit Collection Record';
+    }
 
-
-    document
-      .getElementById(
-        'logLocation'
-      )
-      .value =
-      log.locationId ||
-      '';
-
-
-    document
-      .getElementById(
-        'logTeam'
-      )
-      .value =
-      log.teamId ||
-      '';
-
-
-    document
-      .getElementById(
-        'logDate'
-      )
-      .value =
-      log.scheduledFor
-        ? String(
-            log.scheduledFor
-          ).substring(
-            0,
-            10
-          )
-        : '';
-
-
-    document
-      .getElementById(
-        'logStatus'
-      )
-      .value =
-      log.status ||
-      'collected';
-
-
-    document
-      .getElementById(
-        'logWaste'
-      )
-      .value =
-      log.wasteType ||
-      'Mixed';
-
-
-    document
-      .getElementById(
-        'logNote'
-      )
-      .value =
-      log.note ||
-      '';
-
-
-    openModal(
-      'logCard'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Could not load collection log: ' +
-      error.message
-    );
-
+    $('logCard')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
   }
 
-}
+  async function saveLog(event) {
+    if (event) event.preventDefault();
 
+    const locationId = $('logLocation')?.value || '';
+    const teamId = $('logTeam')?.value || '';
+    const scheduledFor = $('logDate')?.value || '';
+    const status = $('logStatus')?.value || '';
+    const wasteType = $('logWaste')?.value.trim() || '';
+    const note = $('logNote')?.value.trim() || '';
 
-// =========================================
-// RESET LOG FORM
-// =========================================
+    if (!locationId || !teamId || !scheduledFor || !status) {
+      setMessage('Select a location, team, collection date and status.', true);
+      return;
+    }
 
-function resetLogForm() {
+    const parsedDate = new Date(`${scheduledFor}T00:00:00`);
 
-  logEditing = null;
+    if (Number.isNaN(parsedDate.getTime())) {
+      setMessage('Enter a valid collection date.', true);
+      return;
+    }
 
+    const body = {
+      locationId,
+      teamId,
+      scheduledFor: parsedDate.toISOString(),
+      status,
+      wasteType,
+      note
+    };
 
-  document
-    .getElementById(
-      'logFormTitle'
-    )
-    .textContent =
-    'Add a Collection Log';
-
-
-  document
-    .getElementById(
-      'logDate'
-    )
-    .value = '';
-
-
-  document
-    .getElementById(
-      'logStatus'
-    )
-    .value =
-    'collected';
-
-
-  document
-    .getElementById(
-      'logWaste'
-    )
-    .value =
-    'Mixed';
-
-
-  document
-    .getElementById(
-      'logNote'
-    )
-    .value = '';
-
-
-  closeModal(
-    'logCard'
-  );
-
-}
-
-
-// =========================================
-// SAVE LOG
-// =========================================
-
-async function saveLog() {
-
-  const body = {
-
-    locationId:
-      document
-        .getElementById(
-          'logLocation'
-        )
-        .value,
-
-    teamId:
-      document
-        .getElementById(
-          'logTeam'
-        )
-        .value,
-
-    scheduledFor:
-      document
-        .getElementById(
-          'logDate'
-        )
-        .value,
-
-    status:
-      document
-        .getElementById(
-          'logStatus'
-        )
-        .value,
-
-    wasteType:
-      document
-        .getElementById(
-          'logWaste'
-        )
-        .value,
-
-    note:
-      document
-        .getElementById(
-          'logNote'
-        )
-        .value
-        .trim()
-
-  };
-
-
-  if (
-    !body.locationId ||
-    !body.teamId ||
-    !body.scheduledFor
-  ) {
-
-    alert(
-      'Please select a location, team and scheduled date.'
+    const button = document.querySelector(
+      '#logCard button[onclick*="saveLog"]'
     );
 
-    return;
+    if (button) {
+      button.disabled = true;
+      button.dataset.oldText = button.textContent;
+      button.textContent = 'Saving...';
+    }
 
-  }
-
-
-  const url =
-    logEditing
-
-      ? '/api/collectionLogs/' +
-        encodeURIComponent(
-          logEditing
-        )
-
-      : '/api/collectionLogs';
-
-
-  try {
-
-    await apiRequest(
-      url,
-      {
-
-        method:
-          logEditing
-            ? 'PUT'
-            : 'POST',
-
-        headers: {
-          'Content-Type':
-            'application/json'
-        },
-
-        body:
-          JSON.stringify(
-            body
-          )
-
+    try {
+      if (editingLogId) {
+        await request(`/logs/${encodeURIComponent(editingLogId)}`, {
+          method: 'PUT',
+          body: JSON.stringify(body)
+        });
+      } else {
+        await request('/logs', {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
       }
-    );
 
+      resetLogForm();
 
-    resetLogForm();
+      await loadLogs();
 
-    await loadLogs();
-
-    await loadDashboard();
-
-
-    alert(
-      'Collection log saved successfully.'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Error: ' +
-      error.message
-    );
-
-  }
-
-}
-
-
-// =========================================
-// DELETE LOG
-// =========================================
-
-async function deleteLog(id) {
-
-  if (
-    !confirm(
-      'Delete collection log ' +
-      id +
-      '?'
-    )
-  ) {
-
-    return;
-
-  }
-
-
-  try {
-
-    await apiRequest(
-      '/api/collectionLogs/' +
-      encodeURIComponent(id),
-      {
-        method:
-          'DELETE'
+      if (typeof window.loadDashboard === 'function') {
+        await window.loadDashboard();
       }
-    );
 
-
-    await loadLogs();
-
-    await loadDashboard();
-
-
-    alert(
-      'Collection log deleted successfully.'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Error: ' +
-      error.message
-    );
-
+      setMessage('Collection record saved successfully.');
+    } catch (error) {
+      setMessage(error.message, true);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = button.dataset.oldText || 'Save Record';
+      }
+    }
   }
 
-}
+  async function deleteLog(id) {
+    const log = logs.find(
+      (item) => String(recordId(item)) === String(id)
+    );
+
+    if (!log) {
+      setMessage('The selected collection record could not be found.', true);
+      return;
+    }
+
+    if (!confirm('Delete this collection record? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await request(`/logs/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+
+      if (String(editingLogId) === String(id)) {
+        resetLogForm();
+      }
+
+      await loadLogs();
+
+      if (typeof window.loadDashboard === 'function') {
+        await window.loadDashboard();
+      }
+
+      setMessage('Collection record deleted successfully.');
+    } catch (error) {
+      setMessage(error.message, true);
+    }
+  }
+
+  function initialise() {
+    const form = $('logForm');
+
+    if (form) {
+      form.addEventListener('submit', saveLog);
+    }
+
+    const search = $('logSearch');
+
+    if (search) {
+      search.addEventListener('input', () => {
+        const query = search.value.trim().toLowerCase();
+
+        const filtered = logs.filter((log) =>
+          [
+            locationName(log),
+            teamName(log),
+            log.status,
+            log.wasteType,
+            log.note
+          ].join(' ').toLowerCase().includes(query)
+        );
+
+        const original = logs;
+        logs = filtered;
+        renderLogs();
+        logs = original;
+      });
+    }
+  }
+
+  window.loadLogs = loadLogs;
+  window.renderLogs = renderLogs;
+  window.saveLog = saveLog;
+  window.editLog = editLog;
+  window.deleteLog = deleteLog;
+  window.resetLogForm = resetLogForm;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialise);
+  } else {
+    initialise();
+  }
+})();

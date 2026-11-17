@@ -2,795 +2,489 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#126b43">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/icon.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1b6b3a">
+  <meta name="description" content="Report cleanliness and waste-management problems in the Bugema community.">
+  <title>Submit a Report | Bugema Clean Community Tracker</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
 
-    <title>Report a Problem | Bugema Clean Community</title>
+  <style>
+    .report-container {
+      width: min(720px, 92%);
+      margin: 35px auto;
+    }
 
-    <style>
-        :root {
-            --green: #126b43;
-            --green-dark: #0b4930;
-            --green-light: #eaf6ef;
-            --text: #1d3026;
-            --muted: #718078;
-            --border: #e3ebe5;
-            --background: #f5f8f6;
-            --white: #ffffff;
-            --shadow: 0 12px 35px rgba(25, 65, 43, 0.07);
-        }
+    .report-card {
+      background: #fff;
+      padding: 26px;
+      border-radius: 14px;
+      box-shadow: 0 3px 15px rgba(0,0,0,.07);
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    .report-card h2 {
+      color: #1b6b3a;
+      margin-top: 0;
+    }
 
-        html {
-            scroll-behavior: smooth;
-        }
+    .report-form {
+      display: grid;
+      gap: 17px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Inter, "Segoe UI", Arial, sans-serif;
-            background: var(--background);
-            color: var(--text);
-            line-height: 1.6;
-        }
+    .form-group {
+      display: grid;
+      gap: 7px;
+    }
 
-        /* HEADER */
-        header {
-            background: linear-gradient(115deg, #0b4930, #16834e);
-            color: white;
-            padding: 17px 7%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-        }
+    .form-group label {
+      font-weight: 600;
+      color: #26382b;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 1px solid #d3ded5;
+      border-radius: 8px;
+      background: #fff;
+      color: #24352a;
+      font: inherit;
+    }
 
-        .brand-icon {
-            width: 43px;
-            height: 43px;
-            display: grid;
-            place-items: center;
-            border-radius: 13px;
-            background: rgba(255,255,255,0.15);
-            font-size: 24px;
-        }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: 2px solid #1b6b3a;
+      outline-offset: 1px;
+    }
 
-        .brand h1 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 750;
-            letter-spacing: -0.4px;
-        }
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
 
-        .brand p {
-            margin: 2px 0 0;
-            color: #d9f0e2;
-            font-size: 12px;
-        }
+    .form-help {
+      font-size: 13px;
+      color: #68756b;
+    }
 
-        .home-link {
-            text-decoration: none;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.4);
-            padding: 9px 15px;
-            border-radius: 9px;
-            font-size: 13px;
-            font-weight: 650;
-            transition: 0.2s;
-        }
+    .required {
+      color: #b3261e;
+    }
 
-        .home-link:hover {
-            background: white;
-            color: var(--green);
-        }
+    .submit-button {
+      border: none;
+      border-radius: 8px;
+      padding: 14px 20px;
+      background: #1b6b3a;
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
 
-        /* HERO */
-        .hero {
-            background: linear-gradient(135deg, #e9f5ed, #f5faf6);
-            padding: 48px 20px 42px;
-            text-align: center;
-            border-bottom: 1px solid #e3eee6;
-        }
+    .submit-button:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+    }
 
-        .hero-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            color: var(--green);
-            background: #d9eee1;
-            border-radius: 30px;
-            padding: 6px 13px;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
+    .form-message {
+      display: none;
+      padding: 13px;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
 
-        .hero h2 {
-            max-width: 650px;
-            margin: 16px auto 10px;
-            color: #164c31;
-            font-size: clamp(27px, 4vw, 38px);
-            line-height: 1.2;
-            letter-spacing: -1.2px;
-        }
+    .form-message.visible {
+      display: block;
+    }
 
-        .hero p {
-            max-width: 590px;
-            margin: auto;
-            color: #65776c;
-            font-size: 14px;
-        }
+    .form-message.error {
+      background: #fff0f0;
+      color: #a52222;
+    }
 
-        /* MAIN CONTENT */
-        .main-container {
-            width: min(100% - 32px, 1100px);
-            margin: 34px auto 55px;
-            display: grid;
-            grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.8fr);
-            align-items: start;
-            gap: 25px;
-        }
+    .form-message.success {
+      background: #e8f5ec;
+      color: #176b35;
+    }
 
-        .form-card,
-        .side-card {
-            background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: 17px;
-            box-shadow: var(--shadow);
-        }
+    .report-note {
+      padding: 14px;
+      border-radius: 8px;
+      background: #f1f7f2;
+      color: #285a37;
+      line-height: 1.6;
+    }
 
-        .form-card {
-            padding: 30px;
-        }
+    [hidden] {
+      display: none !important;
+    }
 
-        .form-heading {
-            padding-bottom: 21px;
-            margin-bottom: 23px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .form-heading h3 {
-            margin: 0;
-            font-size: 20px;
-            color: #174d32;
-            letter-spacing: -0.4px;
-        }
-
-        .form-heading p {
-            margin: 5px 0 0;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        /* FORM */
-        .form-group {
-            margin-bottom: 19px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 7px;
-            color: #344c3d;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 13px 14px;
-            border: 1px solid #d8e3db;
-            border-radius: 9px;
-            background: #fff;
-            color: var(--text);
-            font-family: inherit;
-            font-size: 14px;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        input::placeholder,
-        textarea::placeholder {
-            color: #a0aca4;
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: #16834e;
-            box-shadow: 0 0 0 3px rgba(22,131,78,0.11);
-        }
-
-        textarea {
-            min-height: 115px;
-            resize: vertical;
-        }
-
-        .field-note {
-            display: block;
-            margin-top: 6px;
-            color: #849188;
-            font-size: 11px;
-        }
-
-        .submit-button {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 9px;
-            padding: 15px;
-            margin-top: 10px;
-            border: 0;
-            border-radius: 10px;
-            background: linear-gradient(110deg, #126b43, #198b53);
-            color: white;
-            font-size: 14px;
-            font-weight: 750;
-            cursor: pointer;
-            box-shadow: 0 6px 15px rgba(18,107,67,0.17);
-            transition: 0.2s;
-        }
-
-        .submit-button:hover {
-            background: #0b4930;
-            transform: translateY(-1px);
-        }
-
-        .submit-button:disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* SIDE INFORMATION */
-        .side-column {
-            display: grid;
-            gap: 17px;
-        }
-
-        .side-card {
-            padding: 23px;
-        }
-
-        .side-icon {
-            width: 43px;
-            height: 43px;
-            display: grid;
-            place-items: center;
-            border-radius: 12px;
-            background: var(--green-light);
-            font-size: 21px;
-            margin-bottom: 14px;
-        }
-
-        .side-card h3 {
-            margin: 0 0 7px;
-            font-size: 16px;
-            color: #174d32;
-        }
-
-        .side-card p {
-            margin: 0;
-            font-size: 13px;
-            color: var(--muted);
-        }
-
-        .steps {
-            margin: 17px 0 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .steps li {
-            display: flex;
-            gap: 11px;
-            margin-bottom: 15px;
-            font-size: 12px;
-            color: #526459;
-        }
-
-        .step-number {
-            flex: 0 0 25px;
-            width: 25px;
-            height: 25px;
-            display: grid;
-            place-items: center;
-            border-radius: 50%;
-            background: var(--green-light);
-            color: var(--green);
-            font-weight: 800;
-        }
-
-        .privacy-card {
-            background: #eff7f1;
-            border: 1px solid #dcece0;
-        }
-
-        .privacy-card h3 {
-            color: #17623b;
-        }
-
-        /* RESPONSE MESSAGES */
-        #msg {
-            display: none;
-            margin-top: 17px;
-            padding: 14px;
-            border-radius: 9px;
-            font-size: 13px;
-            font-weight: 650;
-            line-height: 1.5;
-        }
-
-        .ok {
-            display: block !important;
-            background: #e4f5e9;
-            color: #176b3a;
-            border: 1px solid #c7e8d1;
-        }
-
-        .bad {
-            display: block !important;
-            background: #fff0f0;
-            color: #a51f2d;
-            border: 1px solid #f2d0d3;
-        }
-
-        #trackingLink {
-            display: block;
-            margin-top: 17px;
-            padding: 14px;
-            border-radius: 9px;
-            background: #126b43;
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            font-weight: 750;
-            font-size: 14px;
-            transition: 0.2s;
-        }
-
-        #trackingLink:hover {
-            background: #0b4930;
-        }
-
-        /* FOOTER */
-        footer {
-            background: #103c29;
-            color: white;
-            text-align: center;
-            padding: 27px 15px;
-        }
-
-        footer strong {
-            font-size: 14px;
-        }
-
-        footer p {
-            margin: 5px;
-            color: #d0e4d7;
-            font-size: 12px;
-        }
-
-        /* MOBILE */
-        @media (max-width: 760px) {
-            .main-container {
-                grid-template-columns: 1fr;
-                max-width: 600px;
-            }
-
-            .side-column {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 520px) {
-            header {
-                padding: 15px;
-                flex-wrap: wrap;
-            }
-
-            .brand h1 {
-                font-size: 15px;
-            }
-
-            .home-link {
-                font-size: 12px;
-                padding: 8px 11px;
-            }
-
-            .hero {
-                padding: 35px 18px;
-            }
-
-            .hero h2 {
-                font-size: 27px;
-            }
-
-            .form-card {
-                padding: 21px 17px;
-            }
-
-            .side-column {
-                grid-template-columns: 1fr;
-            }
-
-            .main-container {
-                margin-top: 22px;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                scroll-behavior: auto !important;
-                transition: none !important;
-            }
-        }
-    </style>
+    @media (max-width: 520px) {
+      .report-card {
+        padding: 18px;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <header>
+    <div class="container">
+      <h1>Bugema Clean Community Tracker</h1>
+      <p>Help keep our university and community clean.</p>
 
-    <!-- HEADER -->
-    <header>
-        <div class="brand">
-            <div class="brand-icon">🌿</div>
-            <div>
-                <h1>Bugema Clean Community</h1>
-                <p>Community Waste Management System</p>
-            </div>
+      <nav aria-label="Main navigation">
+        <a href="/home.html">Home</a>
+        <a href="/report.html">Submit Report</a>
+        <a href="/track.html">Track Report</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="report-container">
+    <section class="report-card">
+      <h2>Submit a Cleanliness Report</h2>
+
+      <p>
+        Use this form to report waste accumulation, illegal dumping,
+        overflowing bins, and other cleanliness problems.
+      </p>
+
+      <div class="report-note">
+        Your report will be sent to the responsible administrators.
+        After submission, you will receive a private link to track its progress.
+      </div>
+
+      <div
+        id="formMessage"
+        class="form-message"
+        role="status"
+        aria-live="polite"
+      ></div>
+
+      <form id="reportForm" class="report-form">
+        <div class="form-group">
+          <label for="reporterName">
+            Your name <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="reporterName"
+            name="reporterName"
+            minlength="2"
+            maxlength="80"
+            autocomplete="name"
+            required
+          >
         </div>
 
-        <a href="/home.html" class="home-link">← Back to Home</a>
-    </header>
+        <div class="form-group">
+          <label for="phone">Phone number</label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            maxlength="25"
+            autocomplete="tel"
+          >
+          <span class="form-help">
+            Optional. Provide a number if administrators need to contact you.
+          </span>
+        </div>
 
-    <!-- INTRODUCTION -->
-    <section class="hero">
-        <div class="hero-label">🌱 Community Reporting</div>
+        <div class="form-group">
+          <label for="locationType">
+            Location category <span class="required">*</span>
+          </label>
+          <select id="locationType" name="locationType" required>
+            <option value="">Select location category</option>
+            <option value="University">University / Campus</option>
+            <option value="Resident">Residential Area</option>
+            <option value="Market">Market</option>
+            <option value="Trading Centre">Trading Centre</option>
+            <option value="Roadside/Service Area">Roadside / Service Area</option>
+          </select>
+        </div>
 
-        <h2>Help Keep Our Community Clean</h2>
+        <div class="form-group">
+          <label for="locationDetails">
+            Specific location <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="locationDetails"
+            name="locationDetails"
+            minlength="3"
+            maxlength="250"
+            list="locationSuggestions"
+            placeholder="Enter the exact place or nearby landmark"
+            required
+          >
+          <datalist id="locationSuggestions"></datalist>
+          <span class="form-help">
+            Enter a building, road, landmark, market, or other identifiable place.
+          </span>
+        </div>
 
-        <p>
-            See a waste management problem? Report it here.
-            Your contribution helps the responsible teams
-            identify problems and create a cleaner environment.
-        </p>
+        <div class="form-group">
+          <label for="issueType">
+            Type of problem <span class="required">*</span>
+          </label>
+          <select id="issueType" name="issueType" required>
+            <option value="">Select the problem</option>
+            <option value="Illegal dumping">Illegal dumping</option>
+            <option value="Overflowing bins">Overflowing bins</option>
+            <option value="Uncollected waste">Uncollected waste</option>
+            <option value="Littering">Littering</option>
+            <option value="Blocked drainage">Blocked drainage</option>
+            <option value="Open burning of waste">Open burning of waste</option>
+            <option value="Other">Other cleanliness problem</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="urgency">
+            Urgency <span class="required">*</span>
+          </label>
+          <select id="urgency" name="urgency" required>
+            <option value="">Select urgency</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="description">
+            Describe the problem <span class="required">*</span>
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            minlength="10"
+            maxlength="2000"
+            placeholder="Explain what happened, how long it has been happening, and any other useful details."
+            required
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          id="submitButton"
+          class="submit-button"
+        >
+          Submit Report
+        </button>
+      </form>
     </section>
+  </main>
 
-    <!-- MAIN CONTENT -->
-    <main class="main-container">
+  <script>
+    (() => {
+      'use strict';
 
-        <!-- REPORT FORM -->
-        <section class="form-card">
+      const form = document.getElementById('reportForm');
+      const message = document.getElementById('formMessage');
+      const submitButton = document.getElementById('submitButton');
+      const locationType = document.getElementById('locationType');
+      const locationDetails = document.getElementById('locationDetails');
+      const locationSuggestions = document.getElementById('locationSuggestions');
 
-            <div class="form-heading">
-                <h3>Submit a Waste Report</h3>
-                <p>Provide accurate information so the responsible team can respond.</p>
-            </div>
+      let submitting = false;
+      let suggestionRequest = null;
 
-            <form id="reportForm">
+      function showMessage(text, type) {
+        message.textContent = text;
+        message.className = `form-message visible ${type}`;
+      }
 
-                <div class="form-group">
-                    <label for="name">Your full name *</label>
-                    <input
-                        id="name"
-                        type="text"
-                        maxlength="80"
-                        placeholder="Enter your full name"
-                        autocomplete="name"
-                        required
-                    >
-                </div>
+      function clearMessage() {
+        message.textContent = '';
+        message.className = 'form-message';
+      }
 
-                <div class="form-group">
-                    <label for="phone">Phone number (optional)</label>
-                    <input
-                        id="phone"
-                        type="tel"
-                        maxlength="25"
-                        placeholder="+256..."
-                        autocomplete="tel"
-                    >
-                </div>
+      async function loadLocationSuggestions() {
+        const category = locationType.value;
 
-                <div class="form-group">
-                    <label for="locationType">Where are you reporting from? *</label>
-                    <select id="locationType" required>
-                        <option value="">Select your area type</option>
-                        <option value="University / Campus">University / Campus</option>
-                        <option value="Resident">Residential Area</option>
-                        <option value="Market">Market</option>
-                        <option value="Trading Centre">Trading Centre</option>
-                        <option value="Roadside / Service Area">Roadside / Service Area</option>
-                    </select>
-                </div>
+        locationSuggestions.replaceChildren();
 
-                <div class="form-group">
-                    <label for="locationDetails">Exact location *</label>
-                    <input
-                        id="locationDetails"
-                        type="text"
-                        list="managedLocations"
-                        maxlength="150"
-                        placeholder="Choose a suggestion or enter a village, centre, road or landmark"
-                        required
-                    >
-                    <datalist id="managedLocations"></datalist>
-                    <span class="field-note">
-                        Select a suggested place or enter a precise nearby landmark, village, trading centre or road.
-                    </span>
-                </div>
+        if (!category) return;
 
-                <div class="form-group">
-                    <label for="issue">Type of problem *</label>
-                    <select id="issue" required>
-                        <option value="" selected>Select problem type</option>
-                        <option>Full bin</option>
-                        <option>Overflowing waste</option>
-                        <option>Missed collection</option>
-                        <option>Litter on walkway</option>
-                        <option>Blocked drain</option>
-                        <option>Illegal dumping</option>
-                        <option>Burning of waste</option>
-                        <option>Market waste</option>
-                        <option>Open sewage</option>
-                        <option>Stagnant water</option>
-                        <option>Dead animal</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="urgency">Urgency level *</label>
-                    <select id="urgency" required>
-                        <option>High</option>
-                        <option selected>Medium</option>
-                        <option>Low</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Additional details (optional)</label>
-                    <textarea
-                        id="description"
-                        rows="4"
-                        maxlength="2000"
-                        placeholder="Describe the problem or provide helpful information..."
-                    ></textarea>
-                </div>
-
-                <button id="send" class="submit-button" type="submit">
-                    Submit Report <span>→</span>
-                </button>
-
-                <div id="msg" role="status" aria-live="polite"></div>
-
-            </form>
-        </section>
-
-        <!-- INFORMATION SIDEBAR -->
-        <aside class="side-column">
-
-            <div class="side-card">
-                <div class="side-icon">📋</div>
-                <h3>How it works</h3>
-                <p>Submitting a report is simple. Follow these steps:</p>
-
-                <ol class="steps">
-                    <li>
-                        <span class="step-number">1</span>
-                        <span>Fill in the waste problem details.</span>
-                    </li>
-                    <li>
-                        <span class="step-number">2</span>
-                        <span>Submit your report to the system.</span>
-                    </li>
-                    <li>
-                        <span class="step-number">3</span>
-                        <span>Receive your private tracking link.</span>
-                    </li>
-                    <li>
-                        <span class="step-number">4</span>
-                        <span>Use the link to follow report progress.</span>
-                    </li>
-                </ol>
-            </div>
-
-            <div class="side-card privacy-card">
-                <div class="side-icon">🔒</div>
-                <h3>Your report matters</h3>
-                <p>
-                    Keep your tracking link safe. It allows you to
-                    check the progress of your submitted report.
-                </p>
-            </div>
-
-            <div class="side-card">
-                <div class="side-icon">🌍</div>
-                <h3>Our shared responsibility</h3>
-                <p>
-                    A clean environment begins with community
-                    participation. Every report makes a difference.
-                </p>
-            </div>
-
-        </aside>
-
-    </main>
-
-    <!-- FOOTER -->
-    <footer>
-        <p><strong>🌿 Bugema Clean Community Tracker</strong></p>
-        <p>Working together for a cleaner and healthier community.</p>
-        <p>© 2026 Bugema Clean Community Tracker</p>
-    </footer>
-
-    <!-- REPORT SUBMISSION LOGIC -->
-    <script>
-        const form = document.getElementById('reportForm');
-        const sendButton = document.getElementById('send');
-        const locationType = document.getElementById('locationType');
-        const locationDetails = document.getElementById('locationDetails');
-
-        async function loadLocationSuggestions() {
-            const area = locationType.value === 'University / Campus'
-                ? 'Campus'
-                : locationType.value
-                    ? 'Village'
-                    : '';
-
-            try {
-                const query = area
-                    ? `?area=${encodeURIComponent(area)}`
-                    : '';
-                const response = await fetch(
-                    `/api/locations${query}`
-                );
-
-                if (!response.ok) return;
-
-                const locations = await response.json();
-                const suggestions = document.getElementById('managedLocations');
-                suggestions.replaceChildren();
-
-                locations.forEach(location => {
-                    const option = document.createElement('option');
-                    option.value = location.name;
-                    suggestions.appendChild(option);
-                });
-            } catch (error) {
-                console.warn('Location suggestions could not be loaded:', error);
-            }
+        if (suggestionRequest) {
+          suggestionRequest.abort();
         }
 
-        locationType.addEventListener('change', loadLocationSuggestions);
+        suggestionRequest = new AbortController();
+
+        try {
+          const response = await fetch(
+            `/api/locations?area=${encodeURIComponent(category)}`,
+            {
+              headers: {
+                Accept: 'application/json'
+              },
+              cache: 'no-store',
+              signal: suggestionRequest.signal
+            }
+          );
+
+          if (!response.ok) return;
+
+          const result = await response.json();
+
+          const locations = Array.isArray(result)
+            ? result
+            : Array.isArray(result.locations)
+              ? result.locations
+              : [];
+
+          for (const location of locations) {
+            const name = typeof location === 'string'
+              ? location
+              : location.name;
+
+            if (!name) continue;
+
+            const option = document.createElement('option');
+            option.value = name;
+            locationSuggestions.appendChild(option);
+          }
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            console.error('Location suggestions could not load:', error);
+          }
+        }
+      }
+
+      function getTrackingUrl(result) {
+        if (typeof result.trackingUrl === 'string') {
+          return result.trackingUrl;
+        }
+
+        if (typeof result.trackingToken === 'string') {
+          return `/track.html#${encodeURIComponent(result.trackingToken)}`;
+        }
+
+        if (typeof result.token === 'string') {
+          return `/track.html#${encodeURIComponent(result.token)}`;
+        }
+
+        return null;
+      }
+
+      locationType.addEventListener('change', () => {
+        locationDetails.value = '';
         loadLocationSuggestions();
+      });
 
-        function showMessage(message, good) {
-            const element = document.getElementById('msg');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
 
-            element.textContent = message;
-            element.className = good ? 'ok' : 'bad';
-            element.style.display = 'block';
+        if (submitting) return;
+
+        clearMessage();
+
+        if (!form.reportValidity()) return;
+
+        const payload = {
+          reporterName: document.getElementById('reporterName').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          locationType: locationType.value,
+          locationDetails: locationDetails.value.trim(),
+          issueType: document.getElementById('issueType').value,
+          urgency: document.getElementById('urgency').value,
+          description: document.getElementById('description').value.trim()
+        };
+
+        if (
+          payload.reporterName.length < 2 ||
+          payload.locationDetails.length < 3 ||
+          payload.description.length < 10
+        ) {
+          showMessage(
+            'Please check your name, location, and description before submitting.',
+            'error'
+          );
+          return;
         }
 
-        form.addEventListener('submit', async event => {
-            event.preventDefault();
+        submitting = true;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
 
-            if (sendButton.disabled) return;
-            if (!form.reportValidity()) return;
+        try {
+          const response = await fetch('/api/reports', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            cache: 'no-store',
+            body: JSON.stringify(payload)
+          });
 
-            sendButton.disabled = true;
-            sendButton.textContent = 'Sending...';
+          let result;
 
-            const oldTrackingLink = document.getElementById('trackingLink');
+          try {
+            result = await response.json();
+          } catch (_) {
+            throw new Error('The server returned an invalid response.');
+          }
 
-            if (oldTrackingLink) {
-                oldTrackingLink.remove();
-            }
+          if (!response.ok) {
+            throw new Error(
+              result.error ||
+              result.message ||
+              'Your report could not be submitted.'
+            );
+          }
 
-            try {
-                const body = {
-                    reporterName: document.getElementById('name').value.trim(),
-                    reporterPhone: document.getElementById('phone').value.trim(),
-                    locationType: document.getElementById('locationType').value,
-                    locationDetails: document.getElementById('locationDetails').value.trim(),
-                    issueType: document.getElementById('issue').value,
-                    urgency: document.getElementById('urgency').value,
-                    description: document.getElementById('description').value.trim()
-                };
+          const trackingUrl = getTrackingUrl(result);
 
-                if (body.reporterName.length < 2) {
-                    throw new Error('Please enter a name containing at least 2 characters.');
-                }
+          if (!trackingUrl) {
+            throw new Error(
+              'The report was received, but the server did not return a tracking link. Contact an administrator before submitting again.'
+            );
+          }
 
-                if (!body.locationDetails || body.locationDetails.length < 3) {
-                    throw new Error('Please enter a more specific location.');
-                }
+          let destination;
 
-                if (body.description.length > 0 && body.description.length < 5) {
-                    throw new Error('Please enter at least 5 characters in the description, or leave it empty.');
-                }
+          try {
+            destination = new URL(trackingUrl, window.location.origin);
+          } catch (_) {
+            throw new Error('The server returned an invalid tracking link.');
+          }
 
-                const response = await fetch('/api/reports', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(body)
-                });
+          if (destination.origin !== window.location.origin) {
+            throw new Error('The server returned an unsafe tracking link.');
+          }
 
-                const data = await response.json();
+          showMessage(
+            'Your report was submitted successfully. Opening your private tracking page...',
+            'success'
+          );
 
-                if (!response.ok) {
-                    throw new Error(data.error || 'Report submission failed.');
-                }
+          form.reset();
 
-                if (!data.trackingUrl) {
-                    throw new Error('Your tracking link could not be created.');
-                }
+          window.location.assign(destination.href);
+        } catch (error) {
+          showMessage(error.message, 'error');
 
-                showMessage(
-                    'Your report was submitted successfully! Use the button below to follow its progress.',
-                    true
-                );
-
-                const trackingLink = document.createElement('a');
-
-                trackingLink.id = 'trackingLink';
-                trackingLink.href = data.trackingUrl;
-
-                try {
-                    localStorage.setItem(
-                        'bugemaLastTrackingToken',
-                        new URL(data.trackingUrl, window.location.origin).hash.substring(1)
-                    );
-                } catch (storageError) {
-                    console.warn('Tracking code could not be saved in this browser.');
-                }
-
-                trackingLink.textContent = 'Track Your Report';
-
-                form.insertAdjacentElement('afterend', trackingLink);
-
-                form.reset();
-
-            } catch (error) {
-                showMessage(error.message, false);
-
-            } finally {
-                sendButton.disabled = false;
-                sendButton.innerHTML = 'Submit Report <span>→</span>';
-            }
-        });
-    </script>
-
-    <!-- SERVICE WORKER -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(() => console.log('Bugema Clean service worker registered'))
-                    .catch(error => console.error(
-                        'Service worker registration failed:', error
-                    ));
-            });
+          submitting = false;
+          submitButton.disabled = false;
+          submitButton.textContent = 'Submit Report';
         }
-    </script>
-
+      });
+    })();
+  </script>
 </body>
 </html>

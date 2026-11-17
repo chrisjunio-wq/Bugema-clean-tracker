@@ -1,480 +1,351 @@
-// =========================================
-// LOCATIONS
-// =========================================
 
-let locEditing = null;
+'use strict';
 
+/* =========================================================
+   BUGEMA CLEAN COMMUNITY TRACKER
+   Location management
+   ========================================================= */
 
-// =========================================
-// OPEN ADD LOCATION
-// =========================================
+(() => {
+  const $ = (id) => document.getElementById(id);
 
-function openAddLocation() {
+  let locations = [];
+  let editingLocationId = null;
 
-  locEditing = null;
-
-  document
-    .getElementById('locFormTitle')
-    .textContent =
-    'Add a Location';
-
-  document
-    .getElementById('locName')
-    .value = '';
-
-  document
-    .getElementById('locZone')
-    .value = '';
-
-  document
-    .getElementById('locArea')
-    .value = 'Campus';
-
-  document
-    .getElementById('locBins')
-    .value = '';
-
-  openModal('locCard');
-
-}
-
-
-// =========================================
-// LOAD LOCATIONS
-// =========================================
-
-async function loadLocations() {
-
-  try {
-
-    const area =
-      document
-        .getElementById(
-          'locAreaFilter'
-        )?.value || '';
-
-
-    const params =
-      new URLSearchParams();
-
-
-    if (area) {
-
-      params.set(
-        'area',
-        area
-      );
-
+  function escapeHtml(value) {
+    if (typeof window.escapeHtml === 'function') {
+      return window.escapeHtml(value);
     }
 
-
-    const data =
-      await apiRequest(
-        '/api/locations?' +
-        params.toString()
-      );
-
-
-    document
-      .getElementById(
-        'locRowsTable'
-      )
-      .innerHTML =
-
-      data
-        .map(location => `
-
-          <tr>
-
-            <td>
-              ${safeText(
-                location._id
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                location.name
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                location.zone
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                location.area
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                location.binCount ??
-                ''
-              )}
-            </td>
-
-            <td>
-
-              <button
-                class="small edit"
-                onclick="editLocation('${safeText(
-                  location._id
-                )}')">
-
-                Edit
-
-              </button>
-
-
-              <button
-                class="small del"
-                onclick="deleteLocation('${safeText(
-                  location._id
-                )}')">
-
-                Delete
-
-              </button>
-
-            </td>
-
-          </tr>
-
-        `)
-        .join('');
-
-  } catch (error) {
-
-    console.error(
-      'Loading locations failed:',
-      error
-    );
-
+    return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    })[character]);
   }
 
-}
+  async function request(endpoint, options = {}) {
+    if (typeof window.apiRequest === 'function') {
+      return window.apiRequest(endpoint, options);
+    }
 
-
-// =========================================
-// EDIT LOCATION
-// =========================================
-
-async function editLocation(id) {
-
-  try {
-
-    const location =
-      await apiRequest(
-        '/api/locations/' +
-        encodeURIComponent(id)
-      );
-
-
-    locEditing = id;
-
-
-    document
-      .getElementById(
-        'locFormTitle'
-      )
-      .textContent =
-      'Edit Location ' +
-      id;
-
-
-    document
-      .getElementById(
-        'locName'
-      )
-      .value =
-      location.name ||
-      '';
-
-
-    document
-      .getElementById(
-        'locZone'
-      )
-      .value =
-      location.zone ||
-      '';
-
-
-    document
-      .getElementById(
-        'locArea'
-      )
-      .value =
-      location.area ||
-      '';
-
-
-    document
-      .getElementById(
-        'locBins'
-      )
-      .value =
-      location.binCount ??
-      0;
-
-
-    openModal(
-      'locCard'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Could not load location: ' +
-      error.message
-    );
-
+    throw new Error('The main application API client is unavailable.');
   }
 
-}
-
-
-// =========================================
-// RESET LOCATION FORM
-// =========================================
-
-function resetLocationForm() {
-
-  locEditing = null;
-
-
-  document
-    .getElementById(
-      'locFormTitle'
-    )
-    .textContent =
-    'Add a Location';
-
-
-  document
-    .getElementById(
-      'locName'
-    )
-    .value = '';
-
-
-  document
-    .getElementById(
-      'locZone'
-    )
-    .value = '';
-
-
-  document
-    .getElementById(
-      'locArea'
-    )
-    .value =
-    'Campus';
-
-
-  document
-    .getElementById(
-      'locBins'
-    )
-    .value = '';
-
-
-  closeModal(
-    'locCard'
-  );
-
-}
-
-
-// =========================================
-// SAVE LOCATION
-// =========================================
-
-async function saveLocation() {
-
-  const body = {
-
-    name:
-      document
-        .getElementById(
-          'locName'
-        )
-        .value
-        .trim(),
-
-    zone:
-      document
-        .getElementById(
-          'locZone'
-        )
-        .value
-        .trim(),
-
-    area:
-      document
-        .getElementById(
-          'locArea'
-        )
-        .value,
-
-    binCount:
-      Number(
-        document
-          .getElementById(
-            'locBins'
-          )
-          .value
-      )
-
-  };
-
-
-  if (
-    !body.name ||
-    !body.zone ||
-    !body.area
-  ) {
-
-    alert(
-      'Please complete the location name, zone and area.'
-    );
-
-    return;
-
+  function recordId(record) {
+    return record?._id ?? record?.id ?? '';
   }
 
+  function setMessage(message, isError = false) {
+    const element = $('locMessage') || $('locationMessage');
 
-  if (
-    !Number.isInteger(
-      body.binCount
-    ) ||
-    body.binCount < 0
-  ) {
+    if (!element) return;
 
-    alert(
-      'Bin count must be a non-negative whole number.'
-    );
-
-    return;
-
+    element.textContent = message;
+    element.style.color = isError ? '#b42318' : '#267344';
   }
 
+  function getRowsContainer() {
+    const table = $('locRowsTable');
+    if (!table) return null;
 
-  const url =
-    locEditing
+    return table.querySelector('tbody') || table;
+  }
 
-      ? '/api/locations/' +
-        encodeURIComponent(
-          locEditing
-        )
+  function renderLocations() {
+    const body = getRowsContainer();
+    if (!body) return;
 
-      : '/api/locations';
+    if (!locations.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6">No locations have been added.</td>
+        </tr>
+      `;
+      return;
+    }
 
+    body.innerHTML = locations.map((location) => {
+      const id = recordId(location);
 
-  try {
+      return `
+        <tr>
+          <td>${escapeHtml(location.name || '—')}</td>
+          <td>${escapeHtml(location.zone || '—')}</td>
+          <td>${escapeHtml(location.area || '—')}</td>
+          <td>${escapeHtml(location.binCount ?? location.bins ?? 0)}</td>
+          <td>${escapeHtml(location.createdAt ? new Date(location.createdAt).toLocaleDateString() : '—')}</td>
+          <td>
+            <button type="button" onclick="editLocation('${escapeHtml(id)}')">
+              Edit
+            </button>
+            <button type="button" onclick="deleteLocation('${escapeHtml(id)}')">
+              Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
 
-    await apiRequest(
-      url,
-      {
+  function updateLocationDropdowns() {
+    const dropdownIds = [
+      'reportLocation',
+      'logLocation',
+      'locationFilter'
+    ];
 
-        method:
-          locEditing
-            ? 'PUT'
-            : 'POST',
+    dropdownIds.forEach((id) => {
+      const select = $(id);
+      if (!select) return;
 
-        headers: {
-          'Content-Type':
-            'application/json'
-        },
+      const previousValue = select.value;
+      const firstOption = select.options[0];
 
-        body:
-          JSON.stringify(
-            body
-          )
+      const placeholder = firstOption
+        ? firstOption.textContent
+        : 'Select location';
 
+      select.innerHTML = '';
+
+      select.add(new Option(placeholder, ''));
+
+      locations.forEach((location) => {
+        const idValue = recordId(location);
+
+        const option = new Option(
+          `${location.name || 'Unnamed location'}${location.area ? ` — ${location.area}` : ''}`,
+          idValue
+        );
+
+        select.add(option);
+      });
+
+      if (locations.some((location) => String(recordId(location)) === previousValue)) {
+        select.value = previousValue;
       }
-    );
-
-
-    resetLocationForm();
-
-    await loadLocations();
-
-    await loadDropdowns();
-
-    await loadLogDropdowns();
-
-
-    alert(
-      'Location saved successfully.'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Error: ' +
-      error.message
-    );
-
+    });
   }
 
-}
+  async function loadLocations() {
+    try {
+      const result = await request('/locations');
 
+      locations = Array.isArray(result)
+        ? result
+        : result.locations || result.data || [];
 
-// =========================================
-// DELETE LOCATION
-// =========================================
+      renderLocations();
+      updateLocationDropdowns();
 
-async function deleteLocation(id) {
+      setMessage(`${locations.length} location(s) loaded.`);
 
-  if (
-    !confirm(
-      'Delete location ' +
-      id +
-      '?'
-    )
-  ) {
-
-    return;
-
+      return locations;
+    } catch (error) {
+      setMessage(error.message, true);
+      console.error('Location loading failed:', error);
+      throw error;
+    }
   }
 
+  function resetLocationForm() {
+    editingLocationId = null;
 
-  try {
+    $('locName') && ($('locName').value = '');
+    $('locZone') && ($('locZone').value = '');
+    $('locArea') && ($('locArea').value = '');
+    $('locBins') && ($('locBins').value = '');
 
-    await apiRequest(
-      '/api/locations/' +
-      encodeURIComponent(id),
-      {
-        method:
-          'DELETE'
+    if ($('locFormTitle')) {
+      $('locFormTitle').textContent = 'Add Location';
+    }
+
+    setMessage('');
+  }
+
+  function editLocation(id) {
+    const location = locations.find(
+      (item) => String(recordId(item)) === String(id)
+    );
+
+    if (!location) {
+      setMessage('The selected location could not be found.', true);
+      return;
+    }
+
+    editingLocationId = id;
+
+    if ($('locName')) $('locName').value = location.name || '';
+    if ($('locZone')) $('locZone').value = location.zone || '';
+    if ($('locArea')) $('locArea').value = location.area || '';
+
+    if ($('locBins')) {
+      $('locBins').value = location.binCount ?? location.bins ?? 0;
+    }
+
+    if ($('locFormTitle')) {
+      $('locFormTitle').textContent = 'Edit Location';
+    }
+
+    $('locCard')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
+
+  async function saveLocation(event) {
+    if (event) event.preventDefault();
+
+    const name = $('locName')?.value.trim() || '';
+    const zone = $('locZone')?.value.trim() || '';
+    const area = $('locArea')?.value.trim() || '';
+    const binCount = Number($('locBins')?.value || 0);
+
+    if (!name || !zone || !area) {
+      setMessage('Enter the location name, zone and area.', true);
+      return;
+    }
+
+    if (!Number.isInteger(binCount) || binCount < 0) {
+      setMessage('Bin count must be a whole number of zero or more.', true);
+      return;
+    }
+
+    const body = {
+      name,
+      zone,
+      area,
+      binCount
+    };
+
+    const button = document.querySelector(
+      '#locCard button[onclick*="saveLocation"]'
+    );
+
+    if (button) {
+      button.disabled = true;
+      button.dataset.oldText = button.textContent;
+      button.textContent = 'Saving...';
+    }
+
+    try {
+      if (editingLocationId) {
+        await request(`/locations/${encodeURIComponent(editingLocationId)}`, {
+          method: 'PUT',
+          body: JSON.stringify(body)
+        });
+      } else {
+        await request('/locations', {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
       }
-    );
 
+      resetLocationForm();
 
-    await loadLocations();
+      await loadLocations();
 
-    await loadDropdowns();
+      if (typeof window.loadReports === 'function') {
+        await window.loadReports();
+      }
 
-    await loadLogDropdowns();
+      if (typeof window.loadDashboard === 'function') {
+        await window.loadDashboard();
+      }
 
-
-    alert(
-      'Location deleted successfully.'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Error: ' +
-      error.message
-    );
-
+      setMessage('Location saved successfully.');
+    } catch (error) {
+      setMessage(error.message, true);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = button.dataset.oldText || 'Save Location';
+      }
+    }
   }
 
-}
+  async function deleteLocation(id) {
+    const location = locations.find(
+      (item) => String(recordId(item)) === String(id)
+    );
+
+    if (!location) {
+      setMessage('The selected location could not be found.', true);
+      return;
+    }
+
+    if (!confirm(
+      `Delete "${location.name}"? The server will prevent deletion if records still depend on this location.`
+    )) {
+      return;
+    }
+
+    try {
+      await request(`/locations/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+
+      if (String(editingLocationId) === String(id)) {
+        resetLocationForm();
+      }
+
+      await loadLocations();
+
+      if (typeof window.loadReports === 'function') {
+        await window.loadReports();
+      }
+
+      if (typeof window.loadDashboard === 'function') {
+        await window.loadDashboard();
+      }
+
+      setMessage('Location deleted successfully.');
+    } catch (error) {
+      setMessage(error.message, true);
+    }
+  }
+
+  function initialise() {
+    const form = $('locationForm') || $('locForm');
+
+    if (form) {
+      form.addEventListener('submit', saveLocation);
+    }
+
+    const search = $('locationSearch');
+
+    if (search) {
+      search.addEventListener('input', () => {
+        const query = search.value.trim().toLowerCase();
+
+        const filtered = locations.filter((location) =>
+          [
+            location.name,
+            location.zone,
+            location.area
+          ].join(' ').toLowerCase().includes(query)
+        );
+
+        const original = locations;
+        locations = filtered;
+        renderLocations();
+        locations = original;
+      });
+    }
+  }
+
+  window.loadLocations = loadLocations;
+  window.renderLocations = renderLocations;
+  window.saveLocation = saveLocation;
+  window.editLocation = editLocation;
+  window.deleteLocation = deleteLocation;
+  window.resetLocationForm = resetLocationForm;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialise);
+  } else {
+    initialise();
+  }
+})();

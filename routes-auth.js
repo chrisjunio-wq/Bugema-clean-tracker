@@ -1,222 +1,243 @@
 
+'use strict';
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { requireAuth } = require('./auth');
 
-module.exports = function (db) {
+const {
+  getJwtSecret,
+  requireAuth
+} = require('./auth');
+
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const MAX_LOGIN_ATTEMPTS = 10;
+
+const loginAttempts = new Map();
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function validEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePassword(password) {
+  if (typeof password !== 'string') {
+    return 'Password is required.';
+  }
+
+  if (password.length < 12) {
+    return 'Password must contain at least 12 characters.';
+  }
+
+  if (Buffer.byteLength(password, 'utf8') > 72) {
+    return 'Password must not exceed 72 UTF-8 bytes.';
+  }
+
+  return null;
+}
+
+function getClientKey(req) {
+  return String(req.ip || req.socket?.remoteAddress || 'unknown');
+}
+
+function checkLoginLimit(req, res, next) {
+  const now = Date.now();
+  const key = getClientKey(req);
+  const record = loginAttempts.get(key);
+
+  if (!record || now - record.startedAt >= LOGIN_WINDOW_MS) {
+    loginAttempts.set(key, {
+      startedAt: now,
+      count: 0
+    });
+
+    return next();
+  }
+
+  if (record.count >= MAX_LOGIN_ATTEMPTS) {
+    const retryAfter = Math.ceil(
+      (LOGIN_WINDOW_MS - (now - record.startedAt)) / 1000
+    );
+
+    res.setHeader('Retry-After', String(retryAfter));
+
+    return res.status(429).json({
+      error: 'Too many login attempts. Please try again later.'
+    });
+  }
+
+  return next();
+}
+
+function recordLoginAttempt(req) {
+  const key = getClientKey(req);
+  const record = loginAttempts.get(key);
+
+  if (record) {
+    record.count += 1;
+  }
+}
+
+function clearLoginAttempts(req) {
+  loginAttempts.delete(getClientKey(req));
+}
+
+function createToken(user) {
+  return jwt.sign(
+    {
+      userId: user._id.toString(),
+      tokenVersion: Number(user.tokenVersion || 0)
+    },
+    getJwtSecret(),
+    {
+      algorithm: 'HS256',
+      expiresIn: '2h',
+      issuer: 'bugema-clean-tracker',
+      audience: 'bugema-clean-tracker-users'
+    }
+  );
+}
+
+function publicUser(user) {
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    role: user.role
+  };
+}
+
+function routerFactory(db) {
   const router = express.Router();
   const users = db.collection('users');
-  const attempts = new Map();
 
-  function limitAttempts(maxAttempts) {
-    return (req, res, next) => {
-      const now = Date.now();
-      const key = `${req.ip}:${req.path}`;
-      let entry = attempts.get(key);
-
-      if (!entry || entry.expiresAt <= now) {
-        entry = {
-          count: 0,
-          expiresAt: now + 15 * 60 * 1000
-        };
-        attempts.set(key, entry);
-      }
-
-      if (entry.count >= maxAttempts) {
-        res.setHeader(
-          'Retry-After',
-          String(Math.ceil((entry.expiresAt - now) / 1000))
-        );
-        return res.status(429).json({
-          error: 'Too many attempts. Please try again later.'
-        });
-      }
-
-      entry.count += 1;
-
-      if (attempts.size > 10000) {
-        for (const [attemptKey, attempt] of attempts) {
-          if (attempt.expiresAt <= now) attempts.delete(attemptKey);
-        }
-      }
-
-      return next();
-    };
-  }
-
-  function getJwtSecret() {
-    const secret = process.env.JWT_SECRET;
-
-    if (typeof secret !== 'string' || secret.length < 32) {
-      throw new Error(
-        'JWT_SECRET must contain at least 32 characters'
-      );
-    }
-
-    return secret;
-  }
-
-  function createToken(user) {
-    return jwt.sign(
-      { userId: user._id.toString() },
-      getJwtSecret(),
-      { expiresIn: '2h' }
-    );
-  }
-
-  function publicUser(user) {
-    return {
-      userId: user._id.toString(),
-      name: user.name,
-      email: user.email,
-      role: user.role
-    };
-  }
-
-  // REGISTER
-  router.post('/register', limitAttempts(5), async (req, res) => {
+  router.post('/register', async (req, res) => {
     try {
-      const { name, email, password } = req.body || {};
+      const name = String(req.body.name || '').trim();
+      const email = normalizeEmail(req.body.email);
+      const password = req.body.password;
 
-      if (
-        typeof name !== 'string' ||
-        name.trim().length < 2 ||
-        name.trim().length > 80
-      ) {
+      if (name.length < 2 || name.length > 80) {
         return res.status(400).json({
-          error: 'Name must be between 2 and 80 characters'
+          error: 'Name must contain between 2 and 80 characters.'
         });
       }
 
-      if (
-        typeof email !== 'string' ||
-        email.length > 254 ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-      ) {
+      if (!validEmail(email)) {
         return res.status(400).json({
-          error: 'Enter a valid email address'
+          error: 'Enter a valid email address.'
         });
       }
 
-      if (
-        typeof password !== 'string' ||
-        password.length < 12 ||
-        Buffer.byteLength(password, 'utf8') > 72
-      ) {
+      const passwordError = validatePassword(password);
+
+      if (passwordError) {
         return res.status(400).json({
-          error: 'Password must contain 12–72 UTF-8 bytes'
+          error: passwordError
         });
       }
 
-      const normalizedEmail = email.trim().toLowerCase();
-
-      const existing = await users.findOne({
-        email: normalizedEmail
-      });
-
-      if (existing) {
-        return res.status(409).json({
-          error: 'An account with this email already exists'
-        });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 12);
+      const passwordHash = await bcrypt.hash(password, 12);
+      const now = new Date();
 
       const user = {
-        name: name.trim(),
-        email: normalizedEmail,
-        password: hashedPassword,
+        name,
+        email,
+        passwordHash,
         role: 'user',
-        createdAt: new Date()
+        tokenVersion: 0,
+        disabled: false,
+        createdAt: now,
+        updatedAt: now
       };
 
       const result = await users.insertOne(user);
+
       user._id = result.insertedId;
 
-      const token = createToken(user);
-
       return res.status(201).json({
-        message: 'Account created successfully',
-        token,
+        message: 'Account created successfully.',
         user: publicUser(user)
       });
-
     } catch (error) {
       if (error.code === 11000) {
         return res.status(409).json({
-          error: 'An account with this email already exists'
+          error: 'An account with this email already exists.'
         });
       }
 
-      console.error('Registration error:', error);
+      console.error('Registration error:', error.message);
 
       return res.status(500).json({
-        error: 'Registration could not be completed'
+        error: 'Registration could not be completed.'
       });
     }
   });
 
-  // LOGIN
-  router.post('/login', limitAttempts(30), async (req, res) => {
+  router.post('/login', checkLoginLimit, async (req, res) => {
     try {
-      const { email, password } = req.body || {};
+      const email = normalizeEmail(req.body.email);
+      const password = req.body.password;
 
-      if (
-        typeof email !== 'string' ||
-        typeof password !== 'string' ||
-        !email.trim() ||
-        !password
-      ) {
-        return res.status(400).json({
-          error: 'Email and password are required'
+      if (!validEmail(email) || typeof password !== 'string') {
+        recordLoginAttempt(req);
+
+        return res.status(401).json({
+          error: 'Invalid email or password.'
         });
       }
 
-      const normalizedEmail = email.trim().toLowerCase();
+      const user = await users.findOne({ email });
 
-      const user = await users.findOne({
-        email: normalizedEmail
-      });
+      if (!user || user.disabled === true) {
+        recordLoginAttempt(req);
 
-      if (!user || typeof user.password !== 'string') {
         return res.status(401).json({
-          error: 'Invalid email or password'
+          error: 'Invalid email or password.'
         });
       }
 
       const passwordMatches = await bcrypt.compare(
         password,
-        user.password
+        user.passwordHash || ''
       );
 
       if (!passwordMatches) {
+        recordLoginAttempt(req);
+
         return res.status(401).json({
-          error: 'Invalid email or password'
+          error: 'Invalid email or password.'
         });
       }
+
+      clearLoginAttempts(req);
 
       const token = createToken(user);
 
       return res.json({
-        message: 'Login successful',
+        message: 'Login successful.',
         token,
         user: publicUser(user)
       });
-
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login error:', error.message);
 
       return res.status(500).json({
-        error: 'Login could not be completed'
+        error: 'Login could not be completed.'
       });
     }
   });
 
-  // CURRENT ACCOUNT
   router.get('/me', requireAuth(db), (req, res) => {
-    return res.json(req.user);
+    return res.json({
+      user: publicUser(req.user)
+    });
   });
 
   return router;
-};
+}
+
+module.exports = routerFactory;

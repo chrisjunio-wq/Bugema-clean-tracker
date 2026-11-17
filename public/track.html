@@ -4,881 +4,580 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#176b3a">
-
-  <title>Track Your Report | Bugema Clean</title>
+  <meta name="theme-color" content="#1b6b3a">
+  <meta name="description" content="Privately track the progress of your Bugema Clean Community report.">
+  <title>Track Your Report | Bugema Clean Community Tracker</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
 
   <style>
-    * {
-      box-sizing: border-box;
+    .tracking-container {
+      width: min(760px, 92%);
+      margin: 35px auto;
     }
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f7f5;
-      color: #26352a;
-      line-height: 1.6;
+    .tracking-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 15px rgba(0, 0, 0, .07);
     }
 
-    header {
-      background: linear-gradient(135deg, #176b3a, #239653);
-      color: white;
-      padding: 20px 24px;
-    }
-
-    .header-content {
-      max-width: 1050px;
-      margin: auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-
-    header h2 {
-      margin: 0;
-      font-size: 23px;
-    }
-
-    header a {
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      padding: 9px 15px;
-      border: 1px solid rgba(255,255,255,0.4);
-      border-radius: 7px;
-    }
-
-    header a:hover {
-      background: rgba(255,255,255,0.15);
-    }
-
-    .container {
-      max-width: 950px;
-      margin: 40px auto;
-      padding: 0 18px;
-    }
-
-    .intro {
-      margin-bottom: 25px;
-    }
-
-    .intro small {
-      color: #21834a;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .intro h1 {
-      margin: 8px 0;
-      color: #176b3a;
-      font-size: 30px;
-    }
-
-    .intro p {
-      color: #68736a;
-      margin: 0;
-    }
-
-    .card {
-      background: white;
-      border-radius: 13px;
-      padding: 27px;
-      margin-bottom: 22px;
-      border: 1px solid #e6ece7;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.045);
-    }
-
-    .card h2 {
-      color: #176b3a;
-      margin-top: 0;
-      margin-bottom: 8px;
-    }
-
-    .card-description {
-      color: #718076;
+    .tracking-heading {
+      color: #1b6b3a;
       margin-top: 0;
     }
 
-    .status-section {
-      background: #f2f8f3;
-      border: 1px solid #dceade;
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 22px;
-    }
-
-    .status-section small {
-      display: block;
-      color: #68736a;
-      margin-bottom: 8px;
-    }
-
-    .status-label {
+    .tracking-status {
       display: inline-block;
-      padding: 9px 17px;
-      border-radius: 25px;
-      background: #dff2e4;
-      color: #176b3a;
-      font-weight: bold;
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: #e8f5ec;
+      color: #1b6b3a;
+      font-weight: 700;
       font-size: 14px;
     }
 
-    .details {
+    .tracking-status.rejected {
+      background: #fdecec;
+      color: #a52222;
+    }
+
+    .tracking-status.resolved {
+      background: #e5f5e9;
+      color: #176b35;
+    }
+
+    .tracking-details {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 17px;
-      margin-top: 22px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 20px;
     }
 
-    .detail {
-      background: #f7f9f7;
-      padding: 17px;
-      border: 1px solid #edf1ed;
+    .tracking-detail {
+      background: #f5f8f5;
       border-radius: 9px;
-      min-width: 0;
-    }
-
-    .detail small {
-      display: block;
-      color: #718076;
-      margin-bottom: 6px;
-    }
-
-    .detail strong {
-      display: block;
-      color: #26352a;
+      padding: 13px;
       overflow-wrap: anywhere;
     }
 
-    #resolvedDate {
-      background: #eaf7ed;
-      color: #176b3a;
-      padding: 13px 16px;
-      border-radius: 8px;
-      margin-top: 20px;
-      font-weight: bold;
+    .tracking-detail small {
+      display: block;
+      color: #68756b;
+      margin-bottom: 5px;
     }
 
-    .timeline {
-      list-style: none;
-      padding: 0;
-      margin: 28px 0 0;
+    .tracking-detail strong {
+      color: #24352a;
     }
 
-    .timeline li {
-      display: flex;
-      gap: 17px;
+    .tracking-description {
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .tracking-timeline {
       position: relative;
-      min-height: 92px;
+      margin: 22px 0 0;
+      padding-left: 25px;
+      border-left: 2px solid #dce9df;
     }
 
-    .marker-column {
-      width: 36px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex-shrink: 0;
+    .timeline-item {
+      position: relative;
+      padding: 0 0 23px 13px;
     }
 
-    .marker {
-      width: 34px;
-      height: 34px;
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -33px;
+      top: 4px;
+      width: 13px;
+      height: 13px;
       border-radius: 50%;
-      border: 2px solid #cbd5cd;
-      background: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-weight: bold;
-      color: #829087;
-      z-index: 1;
+      background: #1b6b3a;
+      border: 3px solid #e8f5ec;
     }
 
-    .timeline-line {
-      width: 3px;
-      flex: 1;
-      background: #dce5de;
-      min-height: 48px;
+    .timeline-item:last-child {
+      padding-bottom: 0;
     }
 
-    .timeline li:last-child .timeline-line {
-      display: none;
+    .timeline-item strong {
+      display: block;
+      color: #1b6b3a;
+      margin-bottom: 5px;
     }
 
-    .timeline li.completed .marker {
-      background: #176b3a;
-      border-color: #176b3a;
-      color: white;
-    }
-
-    .timeline li.completed .timeline-line {
-      background: #176b3a;
-    }
-
-    .timeline li.current .marker {
-      border: 3px solid #176b3a;
-      color: #176b3a;
-      background: #e6f4e9;
-    }
-
-    .timeline-content {
-      padding-bottom: 25px;
-    }
-
-    .timeline-content h3 {
-      margin: 3px 0 6px;
-      font-size: 16px;
-      color: #26352a;
-    }
-
-    .timeline-content p {
-      margin: 0;
-      color: #718076;
-      font-size: 14px;
-    }
-
-    .timeline li.pending .timeline-content h3,
-    .timeline li.pending .timeline-content p {
-      color: #a0aaa2;
-    }
-
-    .progress-footer {
-      border-top: 1px solid #edf1ed;
-      padding-top: 18px;
-      margin-top: 10px;
-    }
-
-    .last-updated {
-      color: #778078;
-      font-size: 12px;
-      margin: 0 0 15px;
-    }
-
-    .refresh-button {
-      padding: 13px 22px;
-      background: #176b3a;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: bold;
-      transition: background 0.2s;
-    }
-
-    .refresh-button:hover {
-      background: #10552d;
-    }
-
-    .refresh-button:disabled {
-      opacity: 0.6;
-      cursor: wait;
-    }
-
-    #message {
-      background: #fff4e5;
-      color: #805000;
-      padding: 16px;
-      border-radius: 8px;
-      display: none;
+    .timeline-item p {
+      margin: 4px 0;
+      color: #536057;
       line-height: 1.5;
-      margin-bottom: 20px;
     }
 
-    #missingLink {
-      display: none;
-      text-align: center;
-      padding: 40px 25px;
-    }
-
-    #missingLink h1 {
-      color: #176b3a;
-      margin-top: 0;
-    }
-
-    #missingLink p {
-      color: #68736a;
-      max-width: 550px;
-      margin: 12px auto;
-    }
-
-    #trackingForm {
-      max-width: 520px;
-      margin: 22px auto 0;
-      text-align: left;
-    }
-
-    #trackingInput {
-      width: 100%;
-      padding: 13px 14px;
-      border: 1px solid #d8e3db;
+    .tracking-message {
+      padding: 13px;
+      margin: 15px 0;
       border-radius: 8px;
+      background: #f1f7f2;
+      color: #285a37;
+    }
+
+    .tracking-error {
+      background: #fff0f0;
+      color: #a52222;
+    }
+
+    .tracking-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .tracking-actions button,
+    .tracking-actions a {
+      display: inline-block;
+      padding: 11px 17px;
+      border: 0;
+      border-radius: 8px;
+      background: #1b6b3a;
+      color: #fff;
+      text-decoration: none;
+      cursor: pointer;
       font: inherit;
     }
 
-    .action-link {
-      display: inline-block;
-      margin-top: 18px;
-      padding: 12px 22px;
-      background: #176b3a;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
+    .tracking-actions a.secondary {
+      background: #edf4ef;
+      color: #1b6b3a;
     }
 
-    .action-link:hover {
-      background: #10552d;
-    }
-
-    footer {
+    .tracking-footer {
       text-align: center;
-      padding: 25px 15px;
-      color: #7b877e;
+      color: #68756b;
       font-size: 13px;
-      border-top: 1px solid #e5ebe6;
-      margin-top: 45px;
+      margin: 20px 0;
     }
 
     [hidden] {
       display: none !important;
     }
 
-    @media (max-width: 600px) {
-      header {
-        padding: 17px;
-      }
-
-      header h2 {
-        font-size: 20px;
-      }
-
-      .container {
-        margin-top: 25px;
-      }
-
-      .intro h1 {
-        font-size: 25px;
-      }
-
-      .details {
+    @media (max-width: 520px) {
+      .tracking-details {
         grid-template-columns: 1fr;
-        gap: 12px;
       }
 
-      .card {
-        padding: 20px;
-      }
-
-      .timeline li {
-        gap: 12px;
-      }
-
-      .refresh-button {
-        width: 100%;
+      .tracking-card {
+        padding: 18px;
       }
     }
   </style>
 </head>
 
 <body>
-
   <header>
-    <div class="header-content">
-      <h2>Bugema Clean</h2>
-      <a href="/home.html">← Back to Home</a>
+    <div class="container">
+      <h1>Bugema Clean Community Tracker</h1>
+      <p>Track the progress of your cleanliness report.</p>
+      <nav aria-label="Main navigation">
+        <a href="/home.html">Home</a>
+        <a href="/report.html">Submit Report</a>
+        <a href="/track.html">Track Report</a>
+      </nav>
     </div>
   </header>
 
-  <main class="container">
-
-    <section id="missingLink" class="card">
-      <h1>Track Your Report</h1>
-
+  <main class="tracking-container">
+    <section class="tracking-card">
+      <h2 class="tracking-heading">Your Report Tracking</h2>
       <p>
-        Paste the private tracking link or tracking code you received
-        after submitting your report.
+        This page shows the latest progress of your submitted community
+        cleanliness report.
       </p>
 
-      <form id="trackingForm">
-        <label for="trackingInput">Private tracking link or code</label>
-        <input
-          id="trackingInput"
-          type="text"
-          autocomplete="off"
-          required
-        >
-        <button class="refresh-button" type="submit">
-          Check Report
+      <div id="trackingMessage" class="tracking-message" role="status">
+        Checking your tracking link...
+      </div>
+
+      <div class="tracking-actions">
+        <button type="button" id="refreshButton" hidden>
+          Refresh Status
         </button>
-      </form>
-
-      <a href="/report.html" class="action-link">
-        Submit a Report
-      </a>
+        <a class="secondary" href="/report.html">Submit Another Report</a>
+      </div>
     </section>
 
-    <section id="tracker" hidden>
+    <section id="reportDetails" class="tracking-card" hidden>
+      <h2 class="tracking-heading">Report Details</h2>
 
-      <div class="intro">
-        <small>Community service tracking</small>
-        <h1>Track Your Report</h1>
-        <p>
-          Follow the progress of your community service request
-          and stay informed about its resolution.
-        </p>
+      <div class="tracking-detail">
+        <small>Current status</small>
+        <span id="reportStatus" class="tracking-status">Open</span>
       </div>
 
-      <div class="card">
-
-        <h2>Report Overview</h2>
-
-        <p class="card-description">
-          Here is the latest information about your submitted report.
-        </p>
-
-        <div class="status-section">
-          <small>Current report status</small>
-
-          <div class="status-label" id="statusLabel">
-            Loading...
-          </div>
+      <div class="tracking-details">
+        <div class="tracking-detail">
+          <small>Report reference</small>
+          <strong id="reportReference">-</strong>
         </div>
 
-        <div class="details">
-
-          <div class="detail">
-            <small>Issue reported</small>
-            <strong id="issueType">Loading...</strong>
-          </div>
-
-          <div class="detail">
-            <small>Location</small>
-            <strong id="location">Loading...</strong>
-          </div>
-
-          <div class="detail">
-            <small>Urgency</small>
-            <strong id="urgency">Loading...</strong>
-          </div>
-
-          <div class="detail">
-            <small>Date submitted</small>
-            <strong id="reportedAt">Loading...</strong>
-          </div>
-
+        <div class="tracking-detail">
+          <small>Issue type</small>
+          <strong id="reportIssue">-</strong>
         </div>
 
-        <p id="resolvedDate" hidden></p>
+        <div class="tracking-detail">
+          <small>Location</small>
+          <strong id="reportLocation">-</strong>
+        </div>
 
+        <div class="tracking-detail">
+          <small>Urgency</small>
+          <strong id="reportUrgency">-</strong>
+        </div>
+
+        <div class="tracking-detail">
+          <small>Date submitted</small>
+          <strong id="reportDate">-</strong>
+        </div>
+
+        <div class="tracking-detail">
+          <small>Assigned team</small>
+          <strong id="reportTeam">Not yet assigned</strong>
+        </div>
+
+        <div class="tracking-detail">
+          <small>Last updated</small>
+          <strong id="reportUpdated">-</strong>
+        </div>
+
+        <div class="tracking-detail">
+          <small>Resolution date</small>
+          <strong id="reportResolved">Not yet resolved</strong>
+        </div>
       </div>
 
-      <div class="card">
-
-        <h2>Service Progress</h2>
-
-        <p class="card-description">
-          This timeline shows how far your request has progressed.
-        </p>
-
-        <ol class="timeline" id="timeline"></ol>
-
-        <div class="progress-footer">
-
-          <p id="lastUpdated" class="last-updated"></p>
-
-          <button
-            type="button"
-            class="refresh-button"
-            id="refreshButton"
-          >
-            Refresh Progress
-          </button>
-
-        </div>
-
+      <div style="margin-top:20px">
+        <h3 class="tracking-heading">Description</h3>
+        <p id="reportDescription" class="tracking-description">-</p>
       </div>
-
     </section>
 
-    <div id="message" role="alert"></div>
+    <section id="activitySection" class="tracking-card" hidden>
+      <h2 class="tracking-heading">Progress History</h2>
+      <p>Updates made to your report appear below.</p>
+      <div id="trackingTimeline" class="tracking-timeline"></div>
+    </section>
 
+    <p class="tracking-footer">
+      Bugema Clean Community Tracker
+    </p>
   </main>
 
-  <footer>
-    <p>Bugema Clean Community Tracker</p>
-    <p>Working together for cleaner and healthier communities.</p>
-  </footer>
-
   <script>
+    (() => {
+      'use strict';
 
-    // ==========================================
-    // PAGE ELEMENTS
-    // ==========================================
+      const API_URL = '/api/reports/track';
+      const REFRESH_INTERVAL = 30000;
+      const TOKEN_STORAGE_KEY = 'bugemaTrackingToken';
 
-    const tracker = document.getElementById('tracker');
-    const missingLink = document.getElementById('missingLink');
-    const message = document.getElementById('message');
-    const refreshButton = document.getElementById('refreshButton');
-    const trackingForm = document.getElementById('trackingForm');
-    const trackingInput = document.getElementById('trackingInput');
+      const elements = {
+        message: document.getElementById('trackingMessage'),
+        refresh: document.getElementById('refreshButton'),
+        details: document.getElementById('reportDetails'),
+        activitySection: document.getElementById('activitySection'),
+        timeline: document.getElementById('trackingTimeline'),
+        status: document.getElementById('reportStatus'),
+        reference: document.getElementById('reportReference'),
+        issue: document.getElementById('reportIssue'),
+        location: document.getElementById('reportLocation'),
+        urgency: document.getElementById('reportUrgency'),
+        date: document.getElementById('reportDate'),
+        team: document.getElementById('reportTeam'),
+        updated: document.getElementById('reportUpdated'),
+        resolved: document.getElementById('reportResolved'),
+        description: document.getElementById('reportDescription')
+      };
 
-    // ==========================================
-    // PRIVATE TRACKING TOKEN
-    // ==========================================
+      const statusLabels = {
+        open: 'Open',
+        'under-review': 'Under Review',
+        assigned: 'Assigned',
+        'in-progress': 'In Progress',
+        resolved: 'Resolved',
+        rejected: 'Rejected'
+      };
 
-    // First check the URL, then use the saved browser token.
-    const tokenFromLink = window.location.hash.substring(1);
-    let savedTrackingToken = '';
+      let trackingToken = '';
+      let refreshTimer = null;
+      let requestInProgress = false;
 
-    try {
-      if (tokenFromLink) {
-        localStorage.setItem(
-          'bugemaLastTrackingToken',
-          tokenFromLink
+      function getToken() {
+        const hashToken = window.location.hash
+          ? decodeURIComponent(window.location.hash.slice(1)).trim()
+          : '';
+
+        if (hashToken) {
+          try {
+            localStorage.setItem(TOKEN_STORAGE_KEY, hashToken);
+          } catch (_) {
+            // Tracking still works when browser storage is unavailable.
+          }
+
+          return hashToken;
+        }
+
+        try {
+          return localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+        } catch (_) {
+          return '';
+        }
+      }
+
+      function displayMessage(message, isError = false) {
+        elements.message.textContent = message;
+        elements.message.classList.toggle('tracking-error', isError);
+      }
+
+      function safeValue(value, fallback = 'Not provided') {
+        if (value === null || value === undefined || value === '') {
+          return fallback;
+        }
+
+        if (typeof value === 'object') {
+          return value.name || value.title || fallback;
+        }
+
+        return String(value);
+      }
+
+      function formatDate(value) {
+        if (!value) return 'Not available';
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+          return 'Not available';
+        }
+
+        return date.toLocaleString();
+      }
+
+      function getReport(result) {
+        if (result && result.report) {
+          return result.report;
+        }
+
+        return result;
+      }
+
+      function getLocation(report) {
+        if (report.location && typeof report.location === 'object') {
+          return report.location.name ||
+            report.locationDetails ||
+            'Not provided';
+        }
+
+        return report.location ||
+          report.locationDetails ||
+          report.locationName ||
+          'Not provided';
+      }
+
+      function renderActivity(report) {
+        const activity = Array.isArray(report.activity)
+          ? report.activity
+          : Array.isArray(report.timeline)
+            ? report.timeline
+            : [];
+
+        elements.timeline.replaceChildren();
+
+        if (activity.length === 0) {
+          elements.activitySection.hidden = true;
+          return;
+        }
+
+        elements.activitySection.hidden = false;
+
+        const sortedActivity = [...activity].sort((a, b) => {
+          return new Date(b.createdAt || b.date || 0) -
+            new Date(a.createdAt || a.date || 0);
+        });
+
+        for (const item of sortedActivity) {
+          const entry = document.createElement('div');
+          entry.className = 'timeline-item';
+
+          const heading = document.createElement('strong');
+          heading.textContent = safeValue(
+            item.title || item.status,
+            'Report update'
+          );
+
+          const description = document.createElement('p');
+          description.textContent = safeValue(
+            item.message || item.description || item.note,
+            'Your report has been updated.'
+          );
+
+          const date = document.createElement('p');
+          date.textContent = formatDate(item.createdAt || item.date);
+
+          entry.append(heading, description, date);
+          elements.timeline.appendChild(entry);
+        }
+      }
+
+      function renderReport(report) {
+        const status = String(report.status || 'open').toLowerCase();
+        const label = statusLabels[status] || 'Open';
+
+        elements.status.textContent = label;
+        elements.status.className = 'tracking-status';
+
+        if (status === 'resolved') {
+          elements.status.classList.add('resolved');
+        } else if (status === 'rejected') {
+          elements.status.classList.add('rejected');
+        }
+
+        elements.reference.textContent = safeValue(
+          report.reportNumber || report.reference || report._id,
+          'Unavailable'
+        );
+
+        elements.issue.textContent = safeValue(report.issueType);
+        elements.location.textContent = getLocation(report);
+        elements.urgency.textContent = safeValue(report.urgency);
+        elements.date.textContent = formatDate(report.createdAt);
+        elements.team.textContent = safeValue(
+          report.assignedTeam,
+          'Not yet assigned'
+        );
+        elements.updated.textContent = formatDate(
+          report.updatedAt || report.createdAt
+        );
+        elements.resolved.textContent = report.resolvedAt
+          ? formatDate(report.resolvedAt)
+          : 'Not yet resolved';
+
+        elements.description.textContent = safeValue(
+          report.description,
+          'No description provided.'
+        );
+
+        elements.details.hidden = false;
+
+        renderActivity(report);
+      }
+
+      async function refreshReport() {
+        if (requestInProgress) return;
+
+        requestInProgress = true;
+        elements.refresh.disabled = true;
+
+        try {
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            cache: 'no-store',
+            body: JSON.stringify({
+              token: trackingToken
+            })
+          });
+
+          let result;
+
+          try {
+            result = await response.json();
+          } catch (_) {
+            throw new Error('The server returned an invalid response.');
+          }
+
+          if (!response.ok) {
+            if (response.status === 404 || response.status === 401) {
+              throw new Error(
+                'This tracking link is invalid or has expired. Please use the original tracking link.'
+              );
+            }
+
+            throw new Error(
+              result.error || result.message ||
+              'Unable to retrieve your report right now.'
+            );
+          }
+
+          const report = getReport(result);
+
+          if (!report || typeof report !== 'object') {
+            throw new Error('The server did not return report details.');
+          }
+
+          renderReport(report);
+
+          const lastUpdated = formatDate(
+            report.updatedAt || report.createdAt
+          );
+
+          displayMessage(
+            `Your report is available. Last updated: ${lastUpdated}. This page refreshes automatically every 30 seconds.`
+          );
+
+          elements.refresh.hidden = false;
+        } catch (error) {
+          displayMessage(error.message, true);
+          elements.refresh.hidden = false;
+        } finally {
+          requestInProgress = false;
+          elements.refresh.disabled = false;
+        }
+      }
+
+      function startTracking() {
+        trackingToken = getToken();
+
+        if (!trackingToken) {
+          displayMessage(
+            'No tracking token was found. Open the private tracking link provided when you submitted your report.',
+            true
+          );
+          return;
+        }
+
+        refreshReport();
+
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+        }
+
+        refreshTimer = setInterval(
+          refreshReport,
+          REFRESH_INTERVAL
         );
       }
 
-      savedTrackingToken =
-        localStorage.getItem('bugemaLastTrackingToken') || '';
-    } catch {
-      // Private tracking links continue to work without browser storage.
-    }
+      elements.refresh.addEventListener('click', refreshReport);
 
-    let trackingToken =
-      tokenFromLink ||
-      savedTrackingToken;
-
-    trackingInput.value = trackingToken || '';
-
-    function readTrackingToken(value) {
-      const input = value.trim();
-
-      try {
-        const url = new URL(input, window.location.origin);
-        if (url.hash.length > 1) {
-          return url.hash.substring(1);
+      window.addEventListener('beforeunload', () => {
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
         }
-      } catch {
-        // A raw tracking code is also accepted.
-      }
-
-      return input.startsWith('#')
-        ? input.substring(1)
-        : input;
-    }
-
-    // ==========================================
-    // TRACKING STAGES
-    // ==========================================
-
-    const stages = [
-      {
-        title: 'Report received',
-        description:
-          'Your community service request has been received.'
-      },
-      {
-        title: 'Under review',
-        description:
-          'The service team is reviewing your request.'
-      },
-      {
-        title: 'Collection team assigned',
-        description:
-          'A team has been assigned to handle the reported issue.'
-      },
-      {
-        title: 'Service in progress',
-        description:
-          'The team is working on your reported issue.'
-      },
-      {
-        title: 'Report resolved',
-        description:
-          'Your reported issue has been addressed.'
-      }
-    ];
-
-    // Maps the database status to the timeline.
-    const statusInformation = {
-
-      open: {
-        index: 0,
-        label: 'Received - awaiting review'
-      },
-
-      assigned: {
-        index: 2,
-        label: 'Collection team assigned'
-      },
-
-      'in-progress': {
-        index: 3,
-        label: 'Service in progress'
-      },
-
-      resolved: {
-        index: 4,
-        label: 'Completed - report resolved'
-      }
-
-    };
-
-    // ==========================================
-    // DATE FORMATTER
-    // ==========================================
-
-    function formatDate(value) {
-      if (!value) {
-        return 'Not available';
-      }
-
-      const date = new Date(value);
-
-      if (Number.isNaN(date.getTime())) {
-        return 'Not available';
-      }
-
-      return date.toLocaleString();
-    }
-
-    // ==========================================
-    // DISPLAY THE PROGRESS TIMELINE
-    // ==========================================
-
-    function displayTimeline(status) {
-
-      const timeline = document.getElementById('timeline');
-
-      const progress =
-        statusInformation[status] ||
-        statusInformation.open;
-
-      const isResolved = status === 'resolved';
-
-      timeline.replaceChildren();
-
-      stages.forEach((stage, index) => {
-
-        const item = document.createElement('li');
-
-        const isCompleted =
-          isResolved || index < progress.index;
-
-        const isCurrent =
-          !isResolved && index === progress.index;
-
-        if (isCompleted) {
-          item.className = 'completed';
-        } else if (isCurrent) {
-          item.className = 'current';
-        } else {
-          item.className = 'pending';
-        }
-
-        // Marker column.
-        const markerColumn = document.createElement('div');
-        markerColumn.className = 'marker-column';
-
-        const marker = document.createElement('div');
-        marker.className = 'marker';
-
-        marker.textContent = isCompleted
-          ? '✓'
-          : String(index + 1);
-
-        const line = document.createElement('div');
-        line.className = 'timeline-line';
-
-        markerColumn.append(marker, line);
-
-        // Timeline content.
-        const content = document.createElement('div');
-        content.className = 'timeline-content';
-
-        const heading = document.createElement('h3');
-        heading.textContent = stage.title;
-
-        const description = document.createElement('p');
-
-        if (isCompleted) {
-          description.textContent =
-            index === 4
-              ? 'Your reported issue has been resolved successfully.'
-              : 'This stage has been completed successfully.';
-        } else {
-          description.textContent = stage.description;
-        }
-
-        content.append(heading, description);
-
-        item.append(markerColumn, content);
-
-        timeline.appendChild(item);
-
       });
 
-      // Update the status displayed at the top.
-      document.getElementById('statusLabel').textContent =
-        isResolved
-          ? 'Completed - report resolved'
-          : progress.label;
-
-    }
-
-    // ==========================================
-    // LOAD REPORT FROM THE SERVER
-    // ==========================================
-
-    async function loadReport(token = trackingToken) {
-
-      if (!token) {
-
-        tracker.hidden = true;
-        missingLink.style.display = 'block';
-
-        return;
-      }
-
-      refreshButton.disabled = true;
-      refreshButton.textContent = 'Checking...';
-
-      message.style.display = 'none';
-
-      try {
-
-        const response = await fetch('/api/reports/track', {
-
-          method: 'POST',
-
-          headers: {
-            'Content-Type': 'application/json'
-          },
-
-          body: JSON.stringify({
-            token
-          })
-
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.error || 'Unable to retrieve your report.'
-          );
-        }
-
-        // Show the tracking dashboard.
-        tracker.hidden = false;
-        missingLink.style.display = 'none';
-
-        // Display report information.
-        document.getElementById('issueType').textContent =
-          data.issueType || 'Not available';
-
-        document.getElementById('location').textContent =
-          data.location || 'Not available';
-
-        document.getElementById('urgency').textContent =
-          data.urgency || 'Not available';
-
-        document.getElementById('reportedAt').textContent =
-          formatDate(data.reportedAt);
-
-        // Display progress timeline.
-        displayTimeline(data.status);
-
-        // Display resolution date when available.
-        const resolvedDate =
-          document.getElementById('resolvedDate');
-
-        if (data.resolvedAt) {
-
-          resolvedDate.textContent =
-            'Resolved on: ' + formatDate(data.resolvedAt);
-
-          resolvedDate.hidden = false;
-
-        } else {
-
-          resolvedDate.hidden = true;
-
-        }
-
-        // Display last refresh time.
-        document.getElementById('lastUpdated').textContent =
-          'Last checked: ' + new Date().toLocaleTimeString();
-
-      } catch (error) {
-
-        tracker.hidden = true;
-        missingLink.style.display = 'block';
-        message.textContent = error.message;
-        message.style.display = 'block';
-
-      } finally {
-
-        refreshButton.disabled = false;
-        refreshButton.textContent = 'Refresh Progress';
-
-      }
-
-    }
-
-    // ==========================================
-    // REFRESH BUTTON
-    // ==========================================
-
-    refreshButton.addEventListener('click', loadReport);
-
-    trackingForm.addEventListener('submit', event => {
-      event.preventDefault();
-
-      const token = readTrackingToken(trackingInput.value);
-
-      if (token.length < 20 || token.length > 200) {
-        message.textContent = 'Enter a valid private tracking link or code.';
-        message.style.display = 'block';
-        return;
-      }
-
-      trackingToken = token;
-      try {
-        localStorage.setItem('bugemaLastTrackingToken', token);
-      } catch {
-        // The URL still retains the token for this report.
-      }
-      window.history.replaceState(null, '', `#${encodeURIComponent(token)}`);
-      loadReport(token);
-    });
-
-    // ==========================================
-    // AUTOMATIC REPORT REFRESH
-    // ==========================================
-
-    // Load the report immediately.
-    loadReport();
-
-    // Automatically check for staff updates every 30 seconds.
-    if (trackingToken) {
-
-      setInterval(() => {
-
-        if (!document.hidden) {
-          loadReport();
-        }
-
-      }, 30000);
-
-    }
-
+      startTracking();
+    })();
   </script>
-
 </body>
 </html>

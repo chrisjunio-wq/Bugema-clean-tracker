@@ -1,617 +1,373 @@
-// =========================================
-// TEAMS
-// =========================================
 
-let teamEditing = null;
+'use strict';
 
+/* =========================================================
+   BUGEMA CLEAN COMMUNITY TRACKER
+   Cleanup team management
+   ========================================================= */
 
-// =========================================
-// OPEN ADD TEAM
-// =========================================
+(() => {
+  const $ = (id) => document.getElementById(id);
 
-function openAddTeam() {
+  let teams = [];
+  let editingTeamId = null;
 
-  teamEditing = null;
+  function escapeHtml(value) {
+    return typeof window.escapeHtml === 'function'
+      ? window.escapeHtml(value)
+      : String(value ?? '').replace(/[&<>"']/g, (character) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        })[character]);
+  }
 
+  async function request(endpoint, options = {}) {
+    if (typeof window.apiRequest !== 'function') {
+      throw new Error('The main application API client is unavailable.');
+    }
 
-  document
-    .getElementById(
-      'teamFormTitle'
-    )
-    .textContent =
-    'Add a Team';
+    return window.apiRequest(endpoint, options);
+  }
 
+  function recordId(record) {
+    return record?._id ?? record?.id ?? '';
+  }
 
-  document
-    .getElementById(
-      'teamName'
-    )
-    .value = '';
+  function setMessage(message, isError = false) {
+    const element = $('teamMessage') || $('teamsMessage');
 
+    if (!element) return;
 
-  document
-    .getElementById(
-      'teamOrg'
-    )
-    .value =
-    'University';
+    element.textContent = message;
+    element.style.color = isError ? '#b42318' : '#267344';
+  }
 
+  function rowsContainer() {
+    const table = $('teamRowsTable');
+    return table ? table.querySelector('tbody') || table : null;
+  }
 
-  document
-    .getElementById(
-      'teamSupervisor'
-    )
-    .value = '';
+  function renderTeams() {
+    const body = rowsContainer();
+    if (!body) return;
 
+    if (!teams.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="8">No cleanup teams have been registered.</td>
+        </tr>
+      `;
+      updateTeamDropdowns();
+      return;
+    }
 
-  document
-    .getElementById(
-      'teamPhone'
-    )
-    .value = '';
+    body.innerHTML = teams.map((team) => {
+      const id = recordId(team);
 
+      const zones = Array.isArray(team.zones)
+        ? team.zones.join(', ')
+        : team.zones || '—';
 
-  document
-    .getElementById(
-      'teamZones'
-    )
-    .value = '';
+      const members = Array.isArray(team.members)
+        ? team.members.join(', ')
+        : team.members || '—';
 
+      return `
+        <tr>
+          <td>${escapeHtml(team.name || '—')}</td>
+          <td>${escapeHtml(team.organization || '—')}</td>
+          <td>${escapeHtml(team.supervisor || '—')}</td>
+          <td>${escapeHtml(team.phone || '—')}</td>
+          <td>${escapeHtml(zones)}</td>
+          <td>${escapeHtml(members)}</td>
+          <td>${escapeHtml(team.shift || '—')}</td>
+          <td>
+            <button type="button" onclick="editTeam('${escapeHtml(id)}')">
+              Edit
+            </button>
+            <button type="button" onclick="deleteTeam('${escapeHtml(id)}')">
+              Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
-  document
-    .getElementById(
-      'teamMembers'
-    )
-    .value = '';
+    updateTeamDropdowns();
+  }
 
+  function updateTeamDropdowns() {
+    const dropdownIds = [
+      'editTeam',
+      'logTeam',
+      'teamFilter'
+    ];
 
-  document
-    .getElementById(
+    dropdownIds.forEach((id) => {
+      const select = $(id);
+      if (!select) return;
+
+      const previousValue = select.value;
+      const placeholder = select.options[0]?.textContent || 'Select team';
+
+      select.innerHTML = '';
+      select.add(new Option(placeholder, ''));
+
+      teams.forEach((team) => {
+        select.add(new Option(team.name || 'Unnamed team', recordId(team)));
+      });
+
+      if (teams.some((team) => String(recordId(team)) === previousValue)) {
+        select.value = previousValue;
+      }
+    });
+  }
+
+  async function loadTeams() {
+    try {
+      const result = await request('/teams');
+
+      teams = Array.isArray(result)
+        ? result
+        : result.teams || result.data || [];
+
+      renderTeams();
+      setMessage(`${teams.length} team(s) loaded.`);
+
+      return teams;
+    } catch (error) {
+      setMessage(error.message, true);
+      console.error('Team loading failed:', error);
+      throw error;
+    }
+  }
+
+  function parseList(value) {
+    return String(value || '')
+      .split(/[\n,;]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function resetTeamForm() {
+    editingTeamId = null;
+
+    [
+      'teamName',
+      'teamOrg',
+      'teamSupervisor',
+      'teamPhone',
+      'teamZones',
+      'teamMembers',
       'teamShift'
-    )
-    .value = '';
+    ].forEach((id) => {
+      if ($(id)) $(id).value = '';
+    });
 
-
-  openModal(
-    'teamCard'
-  );
-
-}
-
-
-// =========================================
-// LOAD TEAMS
-// =========================================
-
-async function loadTeams() {
-
-  try {
-
-    const org =
-      document
-        .getElementById(
-          'teamOrgFilter'
-        )?.value || '';
-
-
-    const params =
-      new URLSearchParams();
-
-
-    if (org) {
-
-      params.set(
-        'organization',
-        org
-      );
-
+    if ($('teamFormTitle')) {
+      $('teamFormTitle').textContent = 'Add Cleanup Team';
     }
 
-
-    const data =
-      await apiRequest(
-        '/api/teams?' +
-        params.toString()
-      );
-
-
-    document
-      .getElementById(
-        'teamRowsTable'
-      )
-      .innerHTML =
-
-      data
-        .map(team => `
-
-          <tr>
-
-            <td>
-              ${safeText(
-                team._id
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                team.name
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                team.organization
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                team.supervisor ||
-                ''
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                team.phone ||
-                ''
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                team.zones
-                  ? team.zones.join(
-                      ', '
-                    )
-                  : ''
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                team.members ??
-                ''
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                team.shift ||
-                ''
-              )}
-            </td>
-
-            <td>
-
-              <button
-                class="small edit"
-                onclick="editTeam('${safeText(
-                  team._id
-                )}')">
-
-                Edit
-
-              </button>
-
-
-              <button
-                class="small del"
-                onclick="deleteTeam('${safeText(
-                  team._id
-                )}')">
-
-                Delete
-
-              </button>
-
-            </td>
-
-          </tr>
-
-        `)
-        .join('');
-
-  } catch (error) {
-
-    console.error(
-      'Loading teams failed:',
-      error
-    );
-
+    setMessage('');
   }
 
-}
-
-
-// =========================================
-// EDIT TEAM
-// =========================================
-
-async function editTeam(id) {
-
-  try {
-
-    const team =
-      await apiRequest(
-        '/api/teams/' +
-        encodeURIComponent(id)
-      );
-
-
-    teamEditing = id;
-
-
-    document
-      .getElementById(
-        'teamFormTitle'
-      )
-      .textContent =
-      'Edit Team ' +
-      id;
-
-
-    document
-      .getElementById(
-        'teamName'
-      )
-      .value =
-      team.name ||
-      '';
-
-
-    document
-      .getElementById(
-        'teamOrg'
-      )
-      .value =
-      team.organization ||
-      '';
-
-
-    document
-      .getElementById(
-        'teamSupervisor'
-      )
-      .value =
-      team.supervisor ||
-      '';
-
-
-    document
-      .getElementById(
-        'teamPhone'
-      )
-      .value =
-      team.phone ||
-      '';
-
-
-    document
-      .getElementById(
-        'teamZones'
-      )
-      .value =
-      team.zones
-        ? team.zones.join(
-            ', '
-          )
-        : '';
-
-
-    document
-      .getElementById(
-        'teamMembers'
-      )
-      .value =
-      team.members ??
-      '';
-
-
-    document
-      .getElementById(
-        'teamShift'
-      )
-      .value =
-      team.shift ||
-      '';
-
-
-    openModal(
-      'teamCard'
+  function editTeam(id) {
+    const team = teams.find(
+      (item) => String(recordId(item)) === String(id)
     );
 
-  } catch (error) {
-
-    alert(
-      'Could not load team: ' +
-      error.message
-    );
-
-  }
-
-}
-
-
-// =========================================
-// RESET TEAM FORM
-// =========================================
-
-function resetTeamForm() {
-
-  teamEditing = null;
-
-
-  document
-    .getElementById(
-      'teamFormTitle'
-    )
-    .textContent =
-    'Add a Team';
-
-
-  document
-    .getElementById(
-      'teamName'
-    )
-    .value = '';
-
-
-  document
-    .getElementById(
-      'teamOrg'
-    )
-    .value =
-    'University';
-
-
-  [
-    'teamSupervisor',
-    'teamPhone',
-    'teamZones',
-    'teamMembers',
-    'teamShift'
-  ].forEach(id => {
-
-    const element =
-      document.getElementById(
-        id
-      );
-
-    if (element) {
-
-      element.value = '';
-
+    if (!team) {
+      setMessage('The selected team could not be found.', true);
+      return;
     }
 
-  });
+    editingTeamId = id;
 
+    if ($('teamName')) $('teamName').value = team.name || '';
+    if ($('teamOrg')) $('teamOrg').value = team.organization || '';
+    if ($('teamSupervisor')) $('teamSupervisor').value = team.supervisor || '';
+    if ($('teamPhone')) $('teamPhone').value = team.phone || '';
 
-  closeModal(
-    'teamCard'
-  );
+    if ($('teamZones')) {
+      $('teamZones').value = Array.isArray(team.zones)
+        ? team.zones.join(', ')
+        : team.zones || '';
+    }
 
-}
+    if ($('teamMembers')) {
+      $('teamMembers').value = Array.isArray(team.members)
+        ? team.members.join(', ')
+        : team.members || '';
+    }
 
+    if ($('teamShift')) $('teamShift').value = team.shift || '';
 
-// =========================================
-// SAVE TEAM
-// =========================================
+    if ($('teamFormTitle')) {
+      $('teamFormTitle').textContent = 'Edit Cleanup Team';
+    }
 
-async function saveTeam() {
-
-  const membersValue =
-    document
-      .getElementById(
-        'teamMembers'
-      )
-      .value;
-
-
-  const body = {
-
-    name:
-      document
-        .getElementById(
-          'teamName'
-        )
-        .value
-        .trim(),
-
-    organization:
-      document
-        .getElementById(
-          'teamOrg'
-        )
-        .value
-        .trim(),
-
-    supervisor:
-      document
-        .getElementById(
-          'teamSupervisor'
-        )
-        .value
-        .trim(),
-
-    phone:
-      document
-        .getElementById(
-          'teamPhone'
-        )
-        .value
-        .trim(),
-
-    zones:
-      document
-        .getElementById(
-          'teamZones'
-        )
-        .value
-        .split(',')
-        .map(zone =>
-          zone.trim()
-        )
-        .filter(Boolean),
-
-    members:
-      membersValue === ''
-        ? 0
-        : Number(
-            membersValue
-          ),
-
-    shift:
-      document
-        .getElementById(
-          'teamShift'
-        )
-        .value
-        .trim()
-
-  };
-
-
-  if (
-    !body.name ||
-    !body.organization
-  ) {
-
-    alert(
-      'Please enter the team name and organization.'
-    );
-
-    return;
-
+    $('teamCard')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
   }
 
+  async function saveTeam(event) {
+    if (event) event.preventDefault();
 
-  if (
-    !Number.isInteger(
-      body.members
-    ) ||
-    body.members < 0
-  ) {
+    const name = $('teamName')?.value.trim() || '';
+    const organization = $('teamOrg')?.value.trim() || '';
+    const supervisor = $('teamSupervisor')?.value.trim() || '';
+    const phone = $('teamPhone')?.value.trim() || '';
+    const zones = parseList($('teamZones')?.value);
+    const members = parseList($('teamMembers')?.value);
+    const shift = $('teamShift')?.value.trim() || '';
 
-    alert(
-      'Members must be a non-negative whole number.'
+    if (!name) {
+      setMessage('Enter the cleanup team name.', true);
+      return;
+    }
+
+    const body = {
+      name,
+      organization,
+      supervisor,
+      phone,
+      zones,
+      members,
+      shift
+    };
+
+    const button = document.querySelector(
+      '#teamCard button[onclick*="saveTeam"]'
     );
 
-    return;
+    if (button) {
+      button.disabled = true;
+      button.dataset.oldText = button.textContent;
+      button.textContent = 'Saving...';
+    }
 
-  }
-
-
-  const url =
-    teamEditing
-
-      ? '/api/teams/' +
-        encodeURIComponent(
-          teamEditing
-        )
-
-      : '/api/teams';
-
-
-  try {
-
-    await apiRequest(
-      url,
-      {
-
-        method:
-          teamEditing
-            ? 'PUT'
-            : 'POST',
-
-        headers: {
-          'Content-Type':
-            'application/json'
-        },
-
-        body:
-          JSON.stringify(
-            body
-          )
-
+    try {
+      if (editingTeamId) {
+        await request(`/teams/${encodeURIComponent(editingTeamId)}`, {
+          method: 'PUT',
+          body: JSON.stringify(body)
+        });
+      } else {
+        await request('/teams', {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
       }
-    );
 
+      resetTeamForm();
+      await loadTeams();
 
-    resetTeamForm();
-
-    await loadTeams();
-
-    await loadDropdowns();
-
-    await loadLogDropdowns();
-
-
-    alert(
-      'Team saved successfully.'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Error: ' +
-      error.message
-    );
-
-  }
-
-}
-
-
-// =========================================
-// DELETE TEAM
-// =========================================
-
-async function deleteTeam(id) {
-
-  if (
-    !confirm(
-      'Delete team ' +
-      id +
-      '?'
-    )
-  ) {
-
-    return;
-
-  }
-
-
-  try {
-
-    await apiRequest(
-      '/api/teams/' +
-      encodeURIComponent(id),
-      {
-        method:
-          'DELETE'
+      if (typeof window.loadReports === 'function') {
+        await window.loadReports();
       }
-    );
 
+      if (typeof window.loadLogs === 'function') {
+        await window.loadLogs();
+      }
 
-    await loadTeams();
-
-    await loadDropdowns();
-
-    await loadLogDropdowns();
-
-
-    alert(
-      'Team deleted successfully.'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Error: ' +
-      error.message
-    );
-
+      setMessage('Cleanup team saved successfully.');
+    } catch (error) {
+      setMessage(error.message, true);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = button.dataset.oldText || 'Save Team';
+      }
+    }
   }
 
-}
+  async function deleteTeam(id) {
+    const team = teams.find(
+      (item) => String(recordId(item)) === String(id)
+    );
+
+    if (!team) {
+      setMessage('The selected team could not be found.', true);
+      return;
+    }
+
+    if (!confirm(
+      `Delete "${team.name}"? The server will prevent deletion if reports or collection records still depend on this team.`
+    )) {
+      return;
+    }
+
+    try {
+      await request(`/teams/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+
+      if (String(editingTeamId) === String(id)) {
+        resetTeamForm();
+      }
+
+      await loadTeams();
+
+      if (typeof window.loadReports === 'function') {
+        await window.loadReports();
+      }
+
+      if (typeof window.loadLogs === 'function') {
+        await window.loadLogs();
+      }
+
+      setMessage('Cleanup team deleted successfully.');
+    } catch (error) {
+      setMessage(error.message, true);
+    }
+  }
+
+  function initialise() {
+    const form = $('teamForm');
+
+    if (form) {
+      form.addEventListener('submit', saveTeam);
+    }
+
+    const search = $('teamSearch');
+
+    if (search) {
+      search.addEventListener('input', () => {
+        const query = search.value.trim().toLowerCase();
+
+        const filtered = teams.filter((team) =>
+          [
+            team.name,
+            team.organization,
+            team.supervisor,
+            team.phone,
+            Array.isArray(team.zones) ? team.zones.join(' ') : team.zones
+          ].join(' ').toLowerCase().includes(query)
+        );
+
+        const original = teams;
+        teams = filtered;
+        renderTeams();
+        teams = original;
+      });
+    }
+  }
+
+  window.loadTeams = loadTeams;
+  window.renderTeams = renderTeams;
+  window.saveTeam = saveTeam;
+  window.editTeam = editTeam;
+  window.deleteTeam = deleteTeam;
+  window.resetTeamForm = resetTeamForm;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialise);
+  } else {
+    initialise();
+  }
+})();

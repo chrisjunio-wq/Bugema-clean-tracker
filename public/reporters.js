@@ -1,478 +1,326 @@
-// =========================================
-// REPORTERS
-// =========================================
 
-let repEditing = null;
+'use strict';
 
+/* =========================================================
+   BUGEMA CLEAN COMMUNITY TRACKER
+   Reporter management
+   ========================================================= */
 
-// =========================================
-// OPEN ADD REPORTER
-// =========================================
+(() => {
+  const $ = (id) => document.getElementById(id);
 
-function openAddReporter() {
+  let reporters = [];
+  let editingReporterId = null;
 
-  repEditing = null;
+  function escapeHtml(value) {
+    return typeof window.escapeHtml === 'function'
+      ? window.escapeHtml(value)
+      : String(value ?? '').replace(/[&<>"']/g, (character) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        })[character]);
+  }
 
+  async function request(endpoint, options = {}) {
+    if (typeof window.apiRequest !== 'function') {
+      throw new Error('The main application API client is unavailable.');
+    }
 
-  document
-    .getElementById(
-      'repFormTitle'
-    )
-    .textContent =
-    'Add a Reporter';
+    return window.apiRequest(endpoint, options);
+  }
 
+  function recordId(record) {
+    return record?._id ?? record?.id ?? '';
+  }
 
-  document
-    .getElementById(
-      'repName'
-    )
-    .value = '';
+  function setMessage(message, isError = false) {
+    const element = $('repMessage') || $('reporterMessage');
 
+    if (!element) return;
 
-  document
-    .getElementById(
-      'repRole'
-    )
-    .value = '';
+    element.textContent = message;
+    element.style.color = isError ? '#b42318' : '#267344';
+  }
 
+  function rowsContainer() {
+    const table = $('repRowsTable');
+    return table ? table.querySelector('tbody') || table : null;
+  }
 
-  document
-    .getElementById(
-      'repAff'
-    )
-    .value =
-    'Campus';
+  function renderReporters() {
+    const body = rowsContainer();
+    if (!body) return;
 
+    if (!reporters.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6">No reporters have been registered.</td>
+        </tr>
+      `;
+      updateReporterDropdowns();
+      return;
+    }
 
-  document
-    .getElementById(
+    body.innerHTML = reporters.map((reporter) => {
+      const id = recordId(reporter);
+
+      return `
+        <tr>
+          <td>${escapeHtml(reporter.name || '—')}</td>
+          <td>${escapeHtml(reporter.role || '—')}</td>
+          <td>${escapeHtml(reporter.affiliation || '—')}</td>
+          <td>${escapeHtml(reporter.phone || '—')}</td>
+          <td>${escapeHtml(reporter.createdAt ? new Date(reporter.createdAt).toLocaleDateString() : '—')}</td>
+          <td>
+            <button type="button" onclick="editReporter('${escapeHtml(id)}')">
+              Edit
+            </button>
+            <button type="button" onclick="deleteReporter('${escapeHtml(id)}')">
+              Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    updateReporterDropdowns();
+  }
+
+  function updateReporterDropdowns() {
+    const dropdownIds = [
+      'reportReporter',
+      'reporterFilter'
+    ];
+
+    dropdownIds.forEach((id) => {
+      const select = $(id);
+      if (!select) return;
+
+      const previousValue = select.value;
+      const placeholder = select.options[0]?.textContent || 'Select reporter';
+
+      select.innerHTML = '';
+      select.add(new Option(placeholder, ''));
+
+      reporters.forEach((reporter) => {
+        select.add(new Option(
+          reporter.name || 'Unnamed reporter',
+          recordId(reporter)
+        ));
+      });
+
+      if (reporters.some((reporter) => String(recordId(reporter)) === previousValue)) {
+        select.value = previousValue;
+      }
+    });
+  }
+
+  async function loadReporters() {
+    try {
+      const result = await request('/reporters');
+
+      reporters = Array.isArray(result)
+        ? result
+        : result.reporters || result.data || [];
+
+      renderReporters();
+      setMessage(`${reporters.length} reporter(s) loaded.`);
+
+      return reporters;
+    } catch (error) {
+      setMessage(error.message, true);
+      console.error('Reporter loading failed:', error);
+      throw error;
+    }
+  }
+
+  function resetReporterForm() {
+    editingReporterId = null;
+
+    [
+      'repName',
+      'repRole',
+      'repAff',
       'repPhone'
-    )
-    .value = '';
+    ].forEach((id) => {
+      if ($(id)) $(id).value = '';
+    });
 
-
-  openModal(
-    'repCard'
-  );
-
-}
-
-
-// =========================================
-// LOAD REPORTERS
-// =========================================
-
-async function loadReporters() {
-
-  try {
-
-    const affiliation =
-      document
-        .getElementById(
-          'repAffFilter'
-        )?.value || '';
-
-
-    const params =
-      new URLSearchParams();
-
-
-    if (affiliation) {
-
-      params.set(
-        'affiliation',
-        affiliation
-      );
-
+    if ($('repFormTitle')) {
+      $('repFormTitle').textContent = 'Add Reporter';
     }
 
-
-    const data =
-      await apiRequest(
-        '/api/reporters?' +
-        params.toString()
-      );
-
-
-    document
-      .getElementById(
-        'repRowsTable'
-      )
-      .innerHTML =
-
-      data
-        .map(reporter => `
-
-          <tr>
-
-            <td>
-              ${safeText(
-                reporter._id
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                reporter.name
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                reporter.role
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                reporter.affiliation
-              )}
-            </td>
-
-            <td>
-              ${safeText(
-                reporter.phone ||
-                ''
-              )}
-            </td>
-
-            <td>
-
-              <button
-                class="small edit"
-                onclick="editReporter('${safeText(
-                  reporter._id
-                )}')">
-
-                Edit
-
-              </button>
-
-
-              <button
-                class="small del"
-                onclick="deleteReporter('${safeText(
-                  reporter._id
-                )}')">
-
-                Delete
-
-              </button>
-
-            </td>
-
-          </tr>
-
-        `)
-        .join('');
-
-  } catch (error) {
-
-    console.error(
-      'Loading reporters failed:',
-      error
-    );
-
+    setMessage('');
   }
 
-}
-
-
-// =========================================
-// EDIT REPORTER
-// =========================================
-
-async function editReporter(id) {
-
-  try {
-
-    const reporter =
-      await apiRequest(
-        '/api/reporters/' +
-        encodeURIComponent(id)
-      );
-
-
-    repEditing = id;
-
-
-    document
-      .getElementById(
-        'repFormTitle'
-      )
-      .textContent =
-      'Edit Reporter ' +
-      id;
-
-
-    document
-      .getElementById(
-        'repName'
-      )
-      .value =
-      reporter.name ||
-      '';
-
-
-    document
-      .getElementById(
-        'repRole'
-      )
-      .value =
-      reporter.role ||
-      '';
-
-
-    document
-      .getElementById(
-        'repAff'
-      )
-      .value =
-      reporter.affiliation ||
-      '';
-
-
-    document
-      .getElementById(
-        'repPhone'
-      )
-      .value =
-      reporter.phone ||
-      '';
-
-
-    openModal(
-      'repCard'
+  function editReporter(id) {
+    const reporter = reporters.find(
+      (item) => String(recordId(item)) === String(id)
     );
 
-  } catch (error) {
-
-    alert(
-      'Could not load reporter: ' +
-      error.message
-    );
-
-  }
-
-}
-
-
-// =========================================
-// RESET REPORTER FORM
-// =========================================
-
-function resetReporterForm() {
-
-  repEditing = null;
-
-
-  document
-    .getElementById(
-      'repFormTitle'
-    )
-    .textContent =
-    'Add a Reporter';
-
-
-  [
-    'repName',
-    'repRole',
-    'repPhone'
-  ].forEach(id => {
-
-    const element =
-      document.getElementById(
-        id
-      );
-
-    if (element) {
-
-      element.value = '';
-
+    if (!reporter) {
+      setMessage('The selected reporter could not be found.', true);
+      return;
     }
 
-  });
+    editingReporterId = id;
 
+    if ($('repName')) $('repName').value = reporter.name || '';
+    if ($('repRole')) $('repRole').value = reporter.role || '';
+    if ($('repAff')) $('repAff').value = reporter.affiliation || '';
+    if ($('repPhone')) $('repPhone').value = reporter.phone || '';
 
-  document
-    .getElementById(
-      'repAff'
-    )
-    .value =
-    'Campus';
+    if ($('repFormTitle')) {
+      $('repFormTitle').textContent = 'Edit Reporter';
+    }
 
-
-  closeModal(
-    'repCard'
-  );
-
-}
-
-
-// =========================================
-// SAVE REPORTER
-// =========================================
-
-async function saveReporter() {
-
-  const body = {
-
-    name:
-      document
-        .getElementById(
-          'repName'
-        )
-        .value
-        .trim(),
-
-    role:
-      document
-        .getElementById(
-          'repRole'
-        )
-        .value
-        .trim(),
-
-    affiliation:
-      document
-        .getElementById(
-          'repAff'
-        )
-        .value
-        .trim(),
-
-    phone:
-      document
-        .getElementById(
-          'repPhone'
-        )
-        .value
-        .trim()
-
-  };
-
-
-  if (
-    !body.name ||
-    !body.role ||
-    !body.affiliation
-  ) {
-
-    alert(
-      'Please enter the reporter name, role and affiliation.'
-    );
-
-    return;
-
+    $('repCard')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
   }
 
+  async function saveReporter(event) {
+    if (event) event.preventDefault();
 
-  const url =
-    repEditing
+    const name = $('repName')?.value.trim() || '';
+    const role = $('repRole')?.value.trim() || '';
+    const affiliation = $('repAff')?.value.trim() || '';
+    const phone = $('repPhone')?.value.trim() || '';
 
-      ? '/api/reporters/' +
-        encodeURIComponent(
-          repEditing
-        )
+    if (!name) {
+      setMessage('Enter the reporter name.', true);
+      return;
+    }
 
-      : '/api/reporters';
+    const body = {
+      name,
+      role,
+      affiliation,
+      phone
+    };
 
+    const button = document.querySelector(
+      '#repCard button[onclick*="saveReporter"]'
+    );
 
-  try {
+    if (button) {
+      button.disabled = true;
+      button.dataset.oldText = button.textContent;
+      button.textContent = 'Saving...';
+    }
 
-    await apiRequest(
-      url,
-      {
-
-        method:
-          repEditing
-            ? 'PUT'
-            : 'POST',
-
-        headers: {
-          'Content-Type':
-            'application/json'
-        },
-
-        body:
-          JSON.stringify(
-            body
-          )
-
+    try {
+      if (editingReporterId) {
+        await request(`/reporters/${encodeURIComponent(editingReporterId)}`, {
+          method: 'PUT',
+          body: JSON.stringify(body)
+        });
+      } else {
+        await request('/reporters', {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
       }
-    );
 
+      resetReporterForm();
+      await loadReporters();
 
-    resetReporterForm();
-
-    await loadReporters();
-
-    await loadDropdowns();
-
-
-    alert(
-      'Reporter saved successfully.'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Error: ' +
-      error.message
-    );
-
-  }
-
-}
-
-
-// =========================================
-// DELETE REPORTER
-// =========================================
-
-async function deleteReporter(id) {
-
-  if (
-    !confirm(
-      'Delete reporter ' +
-      id +
-      '?'
-    )
-  ) {
-
-    return;
-
-  }
-
-
-  try {
-
-    await apiRequest(
-      '/api/reporters/' +
-      encodeURIComponent(id),
-      {
-        method:
-          'DELETE'
+      if (typeof window.loadReports === 'function') {
+        await window.loadReports();
       }
-    );
 
-
-    await loadReporters();
-
-    await loadDropdowns();
-
-
-    alert(
-      'Reporter deleted successfully.'
-    );
-
-  } catch (error) {
-
-    alert(
-      'Error: ' +
-      error.message
-    );
-
+      setMessage('Reporter saved successfully.');
+    } catch (error) {
+      setMessage(error.message, true);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = button.dataset.oldText || 'Save Reporter';
+      }
+    }
   }
 
-}
+  async function deleteReporter(id) {
+    const reporter = reporters.find(
+      (item) => String(recordId(item)) === String(id)
+    );
+
+    if (!reporter) {
+      setMessage('The selected reporter could not be found.', true);
+      return;
+    }
+
+    if (!confirm(
+      `Delete reporter "${reporter.name}"? The server will prevent deletion if existing reports still depend on this reporter.`
+    )) {
+      return;
+    }
+
+    try {
+      await request(`/reporters/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+
+      if (String(editingReporterId) === String(id)) {
+        resetReporterForm();
+      }
+
+      await loadReporters();
+
+      if (typeof window.loadReports === 'function') {
+        await window.loadReports();
+      }
+
+      setMessage('Reporter deleted successfully.');
+    } catch (error) {
+      setMessage(error.message, true);
+    }
+  }
+
+  function initialise() {
+    const form = $('reporterForm') || $('repForm');
+
+    if (form) {
+      form.addEventListener('submit', saveReporter);
+    }
+
+    const search = $('reporterSearch');
+
+    if (search) {
+      search.addEventListener('input', () => {
+        const query = search.value.trim().toLowerCase();
+
+        const filtered = reporters.filter((reporter) =>
+          [
+            reporter.name,
+            reporter.role,
+            reporter.affiliation,
+            reporter.phone
+          ].join(' ').toLowerCase().includes(query)
+        );
+
+        const original = reporters;
+        reporters = filtered;
+        renderReporters();
+        reporters = original;
+      });
+    }
+  }
+
+  window.loadReporters = loadReporters;
+  window.renderReporters = renderReporters;
+  window.saveReporter = saveReporter;
+  window.editReporter = editReporter;
+  window.deleteReporter = deleteReporter;
+  window.resetReporterForm = resetReporterForm;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialise);
+  } else {
+    initialise();
+  }
+})();

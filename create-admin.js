@@ -1,103 +1,149 @@
 
-require('dotenv').config({ override: true });
+'use strict';
 
+require('dotenv').config();
+
+const readline = require('node:readline/promises');
+const { stdin: input, stdout: output } = require('node:process');
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
-const readline = require('readline');
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+const DATABASE_NAME = process.env.DB_NAME || 'bugemaClean';
 
-const ask = question =>
-  new Promise(resolve => rl.question(question, resolve));
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePassword(password) {
+  if (typeof password !== 'string' || password.length < 12) {
+    throw new Error('Password must contain at least 12 characters.');
+  }
+
+  if (Buffer.byteLength(password, 'utf8') > 72) {
+    throw new Error('Password must not exceed 72 UTF-8 bytes.');
+  }
+}
 
 async function main() {
-  const name = (await ask('Admin name: ')).trim();
-  const email = (await ask('Admin email: ')).trim().toLowerCase();
-  const password = await ask('Admin password (12–72 UTF-8 bytes): ');
+  const mongoUri = process.env.MONGO_URI;
 
-  rl.close();
-
-  if (name.length < 2) {
-    throw new Error('Name is too short.');
+  if (!mongoUri) {
+    throw new Error('MONGO_URI is missing from the environment.');
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error('Invalid email.');
-  }
-
-  if (
-    password.length < 12 ||
-    Buffer.byteLength(password, 'utf8') > 72
-  ) {
-    throw new Error('Password must contain 12–72 UTF-8 bytes.');
-  }
-
-  if (!process.env.MONGO_URI) {
-    throw new Error('MONGO_URI is missing from .env.');
-  }
-
-  const mongoHost = new URL(process.env.MONGO_URI).hostname;
-
-  console.log('MongoDB host:', mongoHost);
-
-  const client = new MongoClient(process.env.MONGO_URI);
+  const rl = readline.createInterface({ input, output });
+  const client = new MongoClient(mongoUri);
 
   try {
-    await client.connect();
+    const name = String(
+      await rl.question('Administrator full name: ')
+    ).trim();
 
-    const users = client
-      .db('bugemaClean')
-      .collection('users');
+    if (name.length < 2 || name.length > 80) {
+      throw new Error('Name must contain between 2 and 80 characters.');
+    }
 
-    console.log('Database:', users.namespace);
-    console.log('Users before update:', await users.countDocuments());
-
-    await users.createIndex(
-      { email: 1 },
-      { unique: true }
+    const email = normalizeEmail(
+      await rl.question('Administrator email: ')
     );
 
-    const hash = await bcrypt.hash(password, 12);
+    if (!isValidEmail(email)) {
+      throw new Error('Enter a valid email address.');
+    }
 
-    const existing = await users.findOne({ email });
+    const password = await rl.question('Administrator password: ');
+    validatePassword(password);
 
-    if (existing) {
-      await users.updateOne(
-        { email },
+    const confirmation = await rl.question('Confirm password: ');
+
+    if (password !== confirmation) {
+      throw new Error('The passwords do not match.');
+    }
+
+    await client.connect();
+
+    const db = client.db(DATABASE_NAME);
+    const users = db.collection('users');
+
+    const existingUser = await users.findOne(
+      { email },
+      { projection: { _id: 1, name: 1, email: 1, role: 1 } }
+    );
+
+    if (existingUser) {
+      console.log('\nAn account with this email already exists.');
+      console.log(`Name: ${existingUser.name || 'Not provided'}`);
+      console.log(`Email: ${existingUser.email}`);
+      console.log(`Current role: ${existingUser.role || 'user'}`);
+
+      const answer = (
+        await rl.question(
+          '\nPromote this existing account to administrator without changing its password? Type YES: '
+        )
+      ).trim();
+
+      if (answer !== 'YES') {
+        console.log('Operation cancelled. No changes were made.');
+        return;
+      }
+
+      if (existingUser.role === 'admin') {
+        console.log('This account already has administrator access.');
+        return;
+      }
+
+      const result = await users.updateOne(
+        {
+          _id: existingUser._id,
+          role: { $ne: 'admin' }
+        },
         {
           $set: {
-            name,
-            password: hash,
-            role: 'admin'
+            role: 'admin',
+            updatedAt: new Date()
+          },
+          $inc: {
+            tokenVersion: 1
           }
         }
       );
 
-      console.log('Existing account updated and set as administrator.');
-    } else {
-      await users.insertOne({
-        name,
-        email,
-        password: hash,
-        role: 'admin',
-        createdAt: new Date()
-      });
+      if (result.modifiedCount !== 1) {
+        throw new Error('The existing account could not be promoted.');
+      }
 
-      console.log('Administrator account created.');
+      console.log('\nExisting account promoted successfully.');
+      console.log('The user must sign in again.');
+      return;
     }
 
-    console.log('Final users count:', await users.countDocuments());
+    const passwordHash = await bcrypt.hash(password, 12);
+    const now = new Date();
 
+    await users.insertOne({
+      name,
+      email,
+      passwordHash,
+      role: 'admin',
+      tokenVersion: 0,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    console.log('\nAdministrator account created successfully.');
+    console.log(`Email: ${email}`);
+    console.log('Keep the password secure.');
   } finally {
-    await client.close();
+    rl.close();
+    await client.close().catch(() => {});
   }
 }
 
-main().catch(error => {
-  console.error('Failed:', error.message);
-  rl.close();
-  process.exit(1);
+main().catch((error) => {
+  console.error('\nAdministrator setup failed:', error.message);
+  process.exitCode = 1;
 });
