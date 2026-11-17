@@ -158,7 +158,7 @@ module.exports = function (db) {
   });
 
   // LOGIN
-  router.post('/login', limitAttempts(10), async (req, res) => {
+  router.post('/login', limitAttempts(30), async (req, res) => {
     try {
       const { email, password } = req.body || {};
 
