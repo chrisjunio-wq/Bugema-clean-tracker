@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1b6b3a">
+  <meta name="description" content="Submit a cleanliness report to the Bugema Clean Community Tracker.">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <title>Submit a Report | Bugema Clean Community Tracker</title>
+
+  <style>
+    .report-page {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 92% 18%, rgba(119, 217, 132, .1), transparent 28%),
+        #f3f8f4;
+      color: #203923;
+      font-family: "Plus Jakarta Sans", Inter, "Segoe UI", Arial, sans-serif;
+    }
+
+    .report-page > header {
+      min-height: 74px;
+      padding: 22px 24px;
+      background: linear-gradient(112deg, #2c7040 0%, #347b49 62%, #3b8051 100%);
+    }
+
+    .report-page > header .container {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+    }
+
+    .report-page > nav {
+      display: flex;
+      gap: 5px;
+      padding: 7px max(24px, calc((100% - 1120px) / 2));
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(24, 58, 29, .06);
+    }
+
+    .report-page > nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 42px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      background: #31833c;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 750;
+      text-decoration: none;
+      transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .report-page > nav a:hover {
+      transform: translateY(-1px);
+      background: #24662d;
+      box-shadow: 0 5px 13px rgba(36, 102, 45, .2);
+    }
+
+    .report-page main {
+      padding: 28px 24px 48px;
+    }
+
+    .report-container {
+      width: min(680px, 100%);
+      margin: 0 auto;
+    }
+
+    .report-card {
+      overflow: hidden;
+      border: 1px solid #d7e9d9;
+      border-top: 4px solid #31833c;
+      border-radius: 14px;
+      background: #fff;
+      padding: 26px;
+      box-shadow: 0 12px 32px rgba(24, 58, 29, .07);
+    }
+
+    .report-card h2 {
+      margin: 0;
+      color: #203923;
+      font-family: Fraunces, Lora, Georgia, serif;
+      font-size: clamp(26px, 3.5vw, 32px);
+      letter-spacing: -.035em;
+      line-height: 1.15;
+    }
+
+    .report-card > p {
+      max-width: 610px;
+      margin: 9px 0 20px;
+      color: #4a6650;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .report-fields {
+      display: grid;
+      gap: 15px;
+    }
+
+    .report-fieldset {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 16px;
+      min-width: 0;
+      margin: 0;
+      padding: 15px;
+      border: 1px solid #e1ece3;
+      border-radius: 10px;
+      background: #fcfefc;
+    }
+
+    .report-fieldset legend {
+      padding: 0 8px;
+      color: #2c6e3a;
+      font-size: 14px;
+      font-weight: 750;
+      letter-spacing: .015em;
+    }
+
+    .report-field {
+      min-width: 0;
+    }
+
+    .report-field-full {
+      grid-column: 1 / -1;
+    }
+
+    .report-fieldset label {
+      display: block;
+      margin: 0 0 5px;
+      color: #304d36;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .required-mark {
+      margin-left: 4px;
+      color: #4a6650;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .report-fieldset input,
+    .report-fieldset select,
+    .report-fieldset textarea {
+      min-height: 42px;
+      margin: 0;
+      padding: 9px 11px;
+      border: 1px solid #c9ddcd;
+      border-radius: 8px;
+      background-color: #fff;
+      color: #203923;
+      font: inherit;
+      font-size: 14px;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .report-fieldset input::placeholder,
+    .report-fieldset textarea::placeholder {
+      color: #7a8e7e;
+      opacity: 1;
+    }
+
+    .report-fieldset input:focus,
+    .report-fieldset select:focus,
+    .report-fieldset textarea:focus {
+      outline: none;
+      border-color: #31833c;
+      box-shadow: 0 0 0 3px rgba(49, 131, 60, .14);
+    }
+
+    .report-card textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    .report-submit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 16px;
+    }
+
+    .report-submit-note {
+      margin: 0;
+      color: #5e7763;
+      font-size: 12px;
+    }
+
+    .report-card .report-action,
+    .report-card #submitReport {
+      min-height: 46px;
+      margin: 0;
+      padding: 12px 20px;
+      border: 0;
+      border-radius: 8px;
+      background: #31833c;
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 750;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .report-card .report-action:hover,
+    .report-card #submitReport:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: #24662d;
+      box-shadow: 0 5px 13px rgba(36, 102, 45, .2);
+    }
+
+    .report-card #submitReport:disabled {
+      opacity: .58;
+      cursor: not-allowed;
+    }
+
+    .report-card .report-action.secondary {
+      border: 1px solid #c9ddcd;
+      background: #f3f8f4;
+      color: #286536;
+    }
+
+    .report-card .report-action.secondary:hover {
+      background: #e5f1e7;
+    }
+
+    .report-message {
+      margin-top: 14px;
+      padding: 11px 13px;
+      border: 1px solid #b9d9c0;
+      border-radius: 9px;
+      background: #edf6ef;
+      color: #286536;
+      font-size: 14px;
+    }
+
+    .report-error {
+      border-color: #e7bcbc;
+      background: #fff5f5;
+      color: #a52222;
+    }
+
+    #submissionSuccess > p {
+      margin: 14px 0 20px;
+      color: #4a6650;
+    }
+
+    #submissionSuccess .report-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 8px 8px 0;
+    }
+
+    .report-page :focus-visible {
+      outline: 3px solid #70bb72;
+      outline-offset: 3px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 600px) {
+      .report-page > header {
+        min-height: 62px;
+        padding: 18px 20px;
+      }
+
+      .report-page > nav {
+        gap: 2px;
+        padding: 6px 12px;
+      }
+
+      .report-page > nav a {
+        min-height: 44px;
+        padding: 10px;
+        font-size: 13px;
+      }
+
+      .report-page main {
+        padding: 20px 14px 32px;
+      }
+
+      .report-card {
+        padding: 21px 16px;
+        border-radius: 12px;
+      }
+
+      .report-card > p {
+        margin-bottom: 18px;
+      }
+
+      .report-fieldset {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 14px 12px;
+      }
+
+      .report-field-full {
+        grid-column: auto;
+      }
+
+      .report-submit-row {
+        align-items: stretch;
+        flex-direction: column-reverse;
+        gap: 10px;
+      }
+
+      .report-card #submitReport {
+        width: 100%;
+      }
+
+      #submissionSuccess .report-action {
+        width: 100%;
+        margin-right: 0;
+      }
+    }
+  </style>
+</head>
+
+<body class="report-page">
+  <header>
+  </header>
+
+  <nav aria-label="Main navigation">
+    <a href="/home.html">← Back to Home</a>
+  </nav>
+
+  <main>
+    <div class="report-container">
+      <section id="reportFormCard" class="report-card">
+        <h2>Submit a Report</h2>
+        <p>Tell us what needs attention. We’ll send your report to the appropriate team, and you can track its progress after submission.</p>
+
+        <form id="reportForm">
+          <div class="report-fields">
+            <fieldset class="report-fieldset">
+              <legend>Your details</legend>
+              <div class="report-field">
+                <label for="reporterName">Your name <span class="required-mark">Required</span></label>
+                <input id="reporterName" name="reporterName" type="text" minlength="2" maxlength="80" autocomplete="name" required>
+              </div>
+              <div class="report-field">
+                <label for="reporterPhone">Phone number (optional)</label>
+                <input id="reporterPhone" name="reporterPhone" type="tel" maxlength="25" autocomplete="tel">
+              </div>
+              <div class="report-field report-field-full">
+                <label for="reporterGroup">Where are you from? <span class="required-mark">Required</span></label>
+                <select id="reporterGroup" name="reporterGroup" required>
+                  <option value="">Select one</option>
+                  <option value="Market">Market</option>
+                  <option value="Resident">Resident</option>
+                  <option value="University/Campus">University/Campus</option>
+                </select>
+              </div>
+            </fieldset>
+
+            <fieldset class="report-fieldset">
+              <legend>Where is the issue?</legend>
+              <div class="report-field report-field-full">
+                <label for="locationName">Issue location <span class="required-mark">Required</span></label>
+                <input id="locationName" name="locationName" type="text" minlength="2" maxlength="120" autocomplete="address-level3" placeholder="Include the area and nearby landmark, e.g. Central Market, behind the main stalls" required>
+                <input id="locationDetails" name="locationDetails" type="hidden">
+              </div>
+            </fieldset>
+
+            <fieldset class="report-fieldset">
+              <legend>What needs attention?</legend>
+              <div class="report-field">
+                <label for="issueType">Issue type <span class="required-mark">Required</span></label>
+                <select id="issueType" name="issueType" required>
+                  <option value="">Select an issue type</option>
+                  <option value="Full bin">Full bin</option>
+                  <option value="Overflowing waste">Overflowing waste</option>
+                  <option value="Missed collection">Missed waste collection</option>
+                  <option value="Litter on walkway">Litter or unclean public area</option>
+                  <option value="Market waste">Market or organic waste</option>
+                  <option value="Illegal dumping">Illegal dumping</option>
+                  <option value="Blocked drain">Blocked drain</option>
+                  <option value="Open sewage">Sewage or sanitation problem</option>
+                  <option value="Stagnant water">Stagnant water</option>
+                  <option value="Burning of waste">Burning waste</option>
+                  <option value="Dead animal">Dead animal removal</option>
+                  <option value="Other cleanliness or sanitation concern">Other cleanliness or sanitation concern</option>
+                </select>
+              </div>
+              <div class="report-field">
+                <label for="urgency">Urgency <span class="required-mark">Required</span></label>
+                <select id="urgency" name="urgency" required>
+                  <option value="">Select urgency</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+              <div class="report-field report-field-full">
+                <label for="description">Description (optional)</label>
+                <textarea id="description" name="description" maxlength="2000" placeholder="Describe the problem and any helpful details"></textarea>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="report-submit-row">
+            <p class="report-submit-note">Fields marked as required must be completed.</p>
+            <button id="submitReport" type="submit" disabled>Submit Report</button>
+          </div>
+          <div id="formMessage" class="report-message" role="status" aria-live="polite" hidden></div>
+        </form>
+      </section>
+
+      <section id="submissionSuccess" class="report-card" role="status" aria-live="polite" hidden>
+        <h2>Report submitted</h2>
+        <p id="successMessage">Your report has been received.</p>
+        <a id="trackReportButton" class="report-action" href="/track.html">Track Your Report</a>
+        <a class="report-action secondary" href="/home.html">← Back to Home</a>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const form = document.getElementById('reportForm');
+      const submitButton = document.getElementById('submitReport');
+      const formMessage = document.getElementById('formMessage');
+      const formCard = document.getElementById('reportFormCard');
+      const successPanel = document.getElementById('submissionSuccess');
+      const trackButton = document.getElementById('trackReportButton');
+      const successMessage = document.getElementById('successMessage');
+
+      function showFormMessage(message, isError = false) {
+        formMessage.textContent = message;
+        formMessage.classList.toggle('report-error', isError);
+        formMessage.hidden = false;
+      }
+
+      submitButton.disabled = false;
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        formMessage.hidden = true;
+        submitButton.disabled = true;
+
+        document.getElementById('locationDetails').value =
+          document.getElementById('locationName').value.trim();
+        const formData = new FormData(form);
+        const report = Object.fromEntries(formData.entries());
+
+        try {
+          const response = await fetch('/api/reports', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify(report)
+          });
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Your report could not be submitted.');
+          }
+
+          formCard.hidden = true;
+          successPanel.hidden = false;
+
+          const trackingToken = result.trackingToken || result.token;
+          if (typeof result.reportId === 'string') {
+            try {
+              sessionStorage.setItem('bugemaTrackingReportId', result.reportId);
+              sessionStorage.setItem(
+                'bugemaTrackingReporterName',
+                String(report.reporterName || '')
+              );
+            } catch (_) {
+              // The report reference is also included in the tracking page link.
+            }
+
+            trackButton.href = '/track.html?report=' +
+              encodeURIComponent(result.reportId);
+            successMessage.textContent =
+              (result.message || 'Your report has been received.') +
+              ' Your report number is ' + result.reportId +
+              '. Use the button below to monitor its progress.';
+            trackButton.hidden = false;
+            return;
+          }
+
+          if (typeof trackingToken === 'string' && /^[a-f0-9]{64}$/i.test(trackingToken)) {
+            trackButton.href = '/track.html#' + encodeURIComponent(trackingToken);
+            trackButton.hidden = false;
+            successMessage.textContent = result.message || 'Your report has been received. Use the button below to follow its progress.';
+            return;
+          }
+
+          trackButton.href = '/track.html';
+          trackButton.hidden = false;
+          successMessage.textContent = 'Your report was submitted, but the server did not return its report number. Contact the service team for help tracking it.';
+        } catch (error) {
+          showFormMessage(error.message, true);
+          submitButton.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

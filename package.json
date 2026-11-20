@@ -1,0 +1,24 @@
+
+{
+  "name": "bugema-clean-tracker",
+  "version": "1.0.0",
+  "description": "Bugema Clean Community Tracker",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "check": "node --check server.js && node --check helpers.js && node --check auth.js && node --check routes-auth.js && node --check stats.js && node --check seed.js && node --check promote-admin.js && node --check public/app.js && node --check public/locations.js && node --check public/teams.js && node --check public/reporters.js && node --check public/logs.js",
+    "promote-admin": "node promote-admin.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.7.0"
+  }
+}

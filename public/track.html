@@ -1,0 +1,521 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1b6b3a">
+  <meta name="description" content="Privately track the progress of your Bugema Clean Community report.">
+  <title>Track Your Report | Bugema Clean Community Tracker</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+
+  <style>
+    .tracking-container {
+      width: min(760px, 92%);
+      margin: 35px auto;
+    }
+
+    .tracking-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 15px rgba(0, 0, 0, .07);
+    }
+
+    .tracking-heading {
+      color: #1b6b3a;
+      margin-top: 0;
+    }
+
+    .tracking-card form button {
+      margin-top: 14px;
+      padding: 11px 17px;
+      border: 0;
+      border-radius: 8px;
+      background: #1b6b3a;
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .progress-reference {
+      margin: 0 0 10px;
+      color: #536057;
+    }
+
+    .progress-list {
+      list-style: none;
+      margin: 22px 0 0;
+      padding: 0;
+    }
+
+    .progress-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      min-height: 56px;
+      color: #68756b;
+    }
+
+    .progress-step:not(:last-child) {
+      padding-bottom: 18px;
+    }
+
+    .progress-indicator {
+      display: grid;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      border: 2px solid #cbd8ce;
+      border-radius: 50%;
+      background: #fff;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .progress-step.is-complete {
+      color: #1b6b3a;
+    }
+
+    .progress-step.is-complete .progress-indicator {
+      border-color: #1b6b3a;
+      background: #1b6b3a;
+    }
+
+    .progress-step.is-complete .progress-indicator::before {
+      content: "✓";
+    }
+
+    .progress-step strong {
+      display: block;
+      margin: 2px 0 4px;
+      color: #24352a;
+    }
+
+    .progress-step p {
+      margin: 0;
+      color: #68756b;
+      line-height: 1.5;
+    }
+
+    .tracking-message {
+      padding: 13px;
+      margin: 15px 0;
+      border-radius: 8px;
+      background: #f1f7f2;
+      color: #285a37;
+    }
+
+    .tracking-error {
+      background: #fff0f0;
+      color: #a52222;
+    }
+
+    .tracking-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .tracking-actions button,
+    .tracking-actions a {
+      display: inline-block;
+      padding: 11px 17px;
+      border: 0;
+      border-radius: 8px;
+      background: #1b6b3a;
+      color: #fff;
+      text-decoration: none;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .tracking-actions a.secondary {
+      background: #edf4ef;
+      color: #1b6b3a;
+    }
+
+    .tracking-actions a.secondary:hover {
+      background: #dcebe0;
+    }
+
+    .tracking-footer {
+      text-align: center;
+      color: #68756b;
+      font-size: 13px;
+      margin: 20px 0;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 520px) {
+      .tracking-card {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <h1>Bugema Clean Community Tracker</h1>
+      <p>Track the progress of your cleanliness report.</p>
+      <nav aria-label="Main navigation">
+        <a href="/home.html">Home</a>
+        <a href="/report.html">Submit Report</a>
+        <a href="/track.html">Track Report</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="tracking-container">
+    <section id="progressSection" class="tracking-card" hidden>
+      <h2 class="tracking-heading">Report Progress</h2>
+      <p id="progressReference" class="progress-reference"></p>
+      <p>Steps are checked as your report is updated by the admin.</p>
+      <ol id="progressList" class="progress-list" aria-label="Report progress">
+        <li class="progress-step" data-step="submitted">
+          <span class="progress-indicator" aria-hidden="true"></span>
+          <div>
+            <strong>Report submitted</strong>
+            <p>Your report has been received.</p>
+          </div>
+        </li>
+        <li class="progress-step" data-step="assigned">
+          <span class="progress-indicator" aria-hidden="true"></span>
+          <div>
+            <strong>Team assigned</strong>
+            <p>A cleaning team will be assigned to your report.</p>
+          </div>
+        </li>
+        <li class="progress-step" data-step="in-progress">
+          <span class="progress-indicator" aria-hidden="true"></span>
+          <div>
+            <strong>Work in progress</strong>
+            <p>The team is working on the reported issue.</p>
+          </div>
+        </li>
+        <li class="progress-step" data-step="resolved">
+          <span class="progress-indicator" aria-hidden="true"></span>
+          <div>
+            <strong>Resolved</strong>
+            <p>The report has been completed.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="tracking-card">
+      <h2 class="tracking-heading">Your Report Tracking</h2>
+      <p>
+        This page shows the latest progress of your submitted community
+        cleanliness report.
+      </p>
+
+      <form id="lookupForm">
+        <label for="lookupReportId">Report number</label>
+        <input id="lookupReportId" name="reportId" type="text" maxlength="30" required>
+
+        <label for="lookupReporterName">Name used when submitting</label>
+        <input id="lookupReporterName" name="reporterName" type="text" maxlength="80" autocomplete="name" required>
+
+        <button type="submit">Track Your Report</button>
+      </form>
+
+      <div id="trackingMessage" class="tracking-message" role="status">
+        Enter your report number and name to see the latest status and updates.
+      </div>
+
+      <div class="tracking-actions">
+        <button type="button" id="refreshButton" hidden>
+          Refresh Status
+        </button>
+        <a class="secondary" href="/report.html">Submit Another Report</a>
+        <a class="secondary" href="/home.html">← Back to Home</a>
+      </div>
+    </section>
+
+    <p class="tracking-footer">
+      Bugema Clean Community Tracker
+    </p>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const API_URL = '/api/reports/track';
+      const REFRESH_INTERVAL = 30000;
+      const TOKEN_STORAGE_KEY = 'bugemaTrackingToken';
+
+      const elements = {
+        lookupForm: document.getElementById('lookupForm'),
+        lookupReportId: document.getElementById('lookupReportId'),
+        lookupReporterName: document.getElementById('lookupReporterName'),
+        message: document.getElementById('trackingMessage'),
+        refresh: document.getElementById('refreshButton'),
+        progressSection: document.getElementById('progressSection'),
+        progressReference: document.getElementById('progressReference'),
+        progressList: document.getElementById('progressList')
+      };
+
+      let trackingToken = '';
+      let trackingReportId = '';
+      let refreshTimer = null;
+      let requestInProgress = false;
+
+      function getToken() {
+        const hashToken = window.location.hash
+          ? decodeURIComponent(window.location.hash.slice(1)).trim()
+          : '';
+
+        if (hashToken) {
+          try {
+            localStorage.setItem(TOKEN_STORAGE_KEY, hashToken);
+          } catch (_) {
+            // Tracking still works when browser storage is unavailable.
+          }
+
+          return hashToken;
+        }
+
+        try {
+          const localToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+          if (localToken) return localToken;
+        } catch (_) {
+          // Fall back to the current tab's token when persistent storage is unavailable.
+        }
+
+        try {
+          return sessionStorage.getItem(TOKEN_STORAGE_KEY) || '';
+        } catch (_) {
+          return '';
+        }
+      }
+
+      function getSessionValue(key) {
+        try {
+          return sessionStorage.getItem(key) || '';
+        } catch (_) {
+          return '';
+        }
+      }
+
+      function displayMessage(message, isError = false) {
+        elements.message.textContent = message;
+        elements.message.classList.toggle('tracking-error', isError);
+      }
+
+      function safeValue(value, fallback = 'Not provided') {
+        if (value === null || value === undefined || value === '') {
+          return fallback;
+        }
+
+        if (typeof value === 'object') {
+          return value.name || value.title || fallback;
+        }
+
+        return String(value);
+      }
+
+      function formatDate(value) {
+        if (!value) return 'Not available';
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+          return 'Not available';
+        }
+
+        return date.toLocaleString();
+      }
+
+      function getReport(result) {
+        if (result && result.report) {
+          return result.report;
+        }
+
+        return result;
+      }
+
+      function renderReport(report) {
+        const status = String(report.status || 'open').toLowerCase();
+        const assigned = Boolean(report.assignedTeam) ||
+          ['assigned', 'in-progress', 'resolved'].includes(status);
+        const inProgress = ['in-progress', 'resolved'].includes(status);
+        const completed = status === 'resolved';
+        const completedSteps = {
+          submitted: true,
+          assigned,
+          'in-progress': inProgress,
+          resolved: completed
+        };
+
+        elements.progressList.querySelectorAll('[data-step]').forEach(step => {
+          const isComplete = completedSteps[step.dataset.step] || false;
+          step.classList.toggle('is-complete', isComplete);
+          step.setAttribute('aria-label',
+            step.querySelector('strong').textContent +
+            (isComplete ? ', complete' : ', not yet complete')
+          );
+        });
+
+        const reportNumber = safeValue(
+          report.reportNumber || report.reference || report._id,
+          'Unavailable'
+        );
+        const updatedAt = formatDate(report.updatedAt || report.createdAt);
+        elements.progressReference.textContent =
+          `Report ${reportNumber} · Last updated: ${updatedAt}`;
+        elements.progressSection.hidden = false;
+        elements.lookupForm.hidden = true;
+      }
+
+      async function refreshReport() {
+        if (requestInProgress) return;
+
+        requestInProgress = true;
+        elements.refresh.disabled = true;
+
+        try {
+          const requestBody = trackingReportId
+            ? {
+                reportId: trackingReportId,
+                reporterName: elements.lookupReporterName.value.trim()
+              }
+            : { token: trackingToken };
+
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            cache: 'no-store',
+            body: JSON.stringify(requestBody)
+          });
+
+          let result;
+
+          try {
+            result = await response.json();
+          } catch (_) {
+            throw new Error('The server returned an invalid response.');
+          }
+
+          if (!response.ok) {
+            if (response.status === 404 || response.status === 401) {
+              throw new Error(
+                result.error ||
+                'Report not found. Check the report number and the name used when submitting it.'
+              );
+            }
+
+            throw new Error(
+              result.error || result.message ||
+              'Unable to retrieve your report right now.'
+            );
+          }
+
+          const report = getReport(result);
+
+          if (!report || typeof report !== 'object') {
+            throw new Error('The server did not return report details.');
+          }
+
+          renderReport(report);
+
+          const lastUpdated = formatDate(
+            report.updatedAt || report.createdAt
+          );
+
+          displayMessage(
+            `Your report is available. Last updated: ${lastUpdated}. This page refreshes automatically every 30 seconds.`
+          );
+
+          elements.refresh.hidden = false;
+        } catch (error) {
+          displayMessage(error.message, true);
+          elements.refresh.hidden = false;
+        } finally {
+          requestInProgress = false;
+          elements.refresh.disabled = false;
+        }
+      }
+
+      function startTracking() {
+        trackingToken = getToken();
+        const query = new URLSearchParams(window.location.search);
+        trackingReportId =
+          query.get('report') ||
+          getSessionValue('bugemaTrackingReportId') ||
+          '';
+        const savedReporterName = getSessionValue('bugemaTrackingReporterName');
+
+        if (trackingReportId) {
+          elements.lookupReportId.value = trackingReportId;
+        }
+        if (savedReporterName) {
+          elements.lookupReporterName.value = savedReporterName;
+        }
+
+        if (
+          (trackingReportId && !savedReporterName) ||
+          (!trackingReportId && !trackingToken)
+        ) {
+          displayMessage('Enter your report number and the name used when submitting to track your report.');
+          return;
+        }
+
+        refreshReport();
+
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+        }
+
+        refreshTimer = setInterval(
+          refreshReport,
+          REFRESH_INTERVAL
+        );
+      }
+
+      elements.lookupForm.addEventListener('submit', event => {
+        event.preventDefault();
+        trackingToken = '';
+        trackingReportId = elements.lookupReportId.value.trim();
+
+        try {
+          sessionStorage.setItem('bugemaTrackingReportId', trackingReportId);
+          sessionStorage.setItem(
+            'bugemaTrackingReporterName',
+            elements.lookupReporterName.value.trim()
+          );
+        } catch (_) {
+          // The form values remain available for this page session.
+        }
+
+        refreshReport();
+      });
+
+      elements.refresh.addEventListener('click', refreshReport);
+
+      window.addEventListener('beforeunload', () => {
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+        }
+      });
+
+      startTracking();
+    })();
+  </script>
+</body>
+</html>
