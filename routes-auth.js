@@ -37,87 +37,11 @@ module.exports = function (db) {
     };
   }
 
-  // REGISTER
-  router.post('/register', async (req, res) => {
-    try {
-      const { name, email, password } = req.body || {};
-
-      if (
-        typeof name !== 'string' ||
-        name.trim().length < 2 ||
-        name.trim().length > 80
-      ) {
-        return res.status(400).json({
-          error: 'Name must be between 2 and 80 characters'
-        });
-      }
-
-      if (
-        typeof email !== 'string' ||
-        email.length > 254 ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-      ) {
-        return res.status(400).json({
-          error: 'Enter a valid email address'
-        });
-      }
-
-      if (
-        typeof password !== 'string' ||
-        password.length < 8 ||
-        password.length > 128
-      ) {
-        return res.status(400).json({
-          error: 'Password must be between 8 and 128 characters'
-        });
-      }
-
-      const normalizedEmail = email.trim().toLowerCase();
-
-      const existing = await users.findOne({
-        email: normalizedEmail
-      });
-
-      if (existing) {
-        return res.status(409).json({
-          error: 'An account with this email already exists'
-        });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 12);
-
-      const user = {
-        name: name.trim(),
-        email: normalizedEmail,
-        password: hashedPassword,
-        role: 'user',
-        createdAt: new Date()
-      };
-
-      const result = await users.insertOne(user);
-      user._id = result.insertedId;
-
-      const token = createToken(user);
-
-      return res.status(201).json({
-        message: 'Account created successfully',
-        token,
-        user: publicUser(user)
-      });
-
-    } catch (error) {
-      if (error.code === 11000) {
-        return res.status(409).json({
-          error: 'An account with this email already exists'
-        });
-      }
-
-      console.error('Registration error:', error);
-
-      return res.status(500).json({
-        error: 'Registration could not be completed'
-      });
-    }
+  // Accounts are provisioned by an administrator, not through public registration.
+  router.post('/register', (req, res) => {
+    return res.status(403).json({
+      error: 'Public account registration is disabled. Contact an administrator.'
+    });
   });
 
   // LOGIN
@@ -156,6 +80,12 @@ module.exports = function (db) {
       if (!passwordMatches) {
         return res.status(401).json({
           error: 'Invalid email or password'
+        });
+      }
+
+      if (user.role !== 'admin') {
+        return res.status(403).json({
+          error: 'Administrator access only'
         });
       }
 

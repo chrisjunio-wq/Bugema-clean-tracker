@@ -117,13 +117,7 @@ async function loginAdmin() {
 function logoutAdmin() {
   window.apiToken = '';
   sessionStorage.removeItem('bugemaToken');
-
-  document.getElementById('adminArea').hidden = true;
-  document.getElementById('loginPanel').hidden = false;
-
-  const password = document.getElementById('loginPassword');
-
-  if (password) password.value = '';
+  window.location.replace('/home.html');
 }
 
 // ---------- Load administrator data ----------

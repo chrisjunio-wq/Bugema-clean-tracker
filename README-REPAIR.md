@@ -12,16 +12,14 @@ This is a repaired development copy, not a production deployment. Keep the exist
 4. Start MongoDB.
 5. Run `npm start`.
 6. Open `http://localhost:3000/report.html` for public community reporting.
-7. Open `http://localhost:3000/` for the administrator login.
+7. Open `http://localhost:3000/` for the public home page, then choose **Admin Login**.
 
 ## Create the first administrator
-1. Open the dashboard and register an ordinary account using `/api/auth/register` (or add a registration page later).
-2. Stop the server.
-3. Run `npm run promote-admin`.
-4. Enter the email address of the account you just registered.
-5. Start the server again and sign in. The account must log in again after promotion.
+1. Configure a private `.env.atlas` file with the `MONGO_URI` for the database where the administrator should be created.
+2. Run `node create-admin.js` from the project folder and enter the administrator's name, email, and password.
+3. Use **Admin Login** on the home page to sign in.
 
-Public registration always creates a normal user. Never add an admin role to a public registration form.
+Public account registration is disabled. Only accounts provisioned by a trusted administrator can sign in to the admin dashboard. Use the same MongoDB database for the app and the administrator account.
 
 ## Data safety
 - `npm run seed` is now non-destructive: it inserts only seed records whose IDs do not already exist. It does not replace existing records.
@@ -33,7 +31,7 @@ Public registration always creates a normal user. Never add an admin role to a p
 - The public report form asks whether the reporter is from the Market, a Resident area, or University/Campus, then collects a matching area and exact location details.
 - After submission, the report page shows a report number and provides a **Track Your Report** button. The tracking page can also look up a report using its report number and the submitter's name, and refreshes the report status and progress history automatically.
 - Locations are publicly readable so the report form can populate its location list.
-- Administrative data and statistics require an administrator login.
+- Administrative data and statistics require an administrator login. Logging out returns to the public home page.
 - The admin login token is kept in `sessionStorage` for the current browser tab and expires according to the server token lifetime.
 
 ## Before public deployment
