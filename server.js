@@ -926,7 +926,7 @@ async function startServer() {
 
   await client.connect();
 
-  db = client.db();
+  db = client.db('bugemaClean');
 
   console.log(
     'Connected to MongoDB database:',
